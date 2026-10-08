@@ -17,7 +17,7 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
   }
   return (
     <button type="button" className={styles.copy} onClick={copy} aria-label={copied ? 'Copied' : label}>
-      {copied ? <Check size={16} weight="bold" aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+      {copied ? <Check size={16} weight="bold" aria-hidden="true" /> : <Copy size={16} weight="fill" aria-hidden="true" />}
       <span>{copied ? 'Copied' : 'Copy'}</span>
     </button>
   )

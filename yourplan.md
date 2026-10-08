@@ -119,7 +119,18 @@ screens' own polls trigger the tick server-side, so the secret never reaches the
   receipted exactly once, every address emptied, treasury up by exactly the 5 CC sent. Its last check
   used to assume deposits came from the treasury's own wallet; send-deposit.ts now sends from the funded
   Exchange party, so the check now expects the amount actually sent from outside.
-- Waiting on you: 3.1 (Neon terms) and 3.9 (commit approval). 3.8 and 3.10 follow on their own.
+- 3.1: Neon `naust-db` provisioned in us-east-1 and connected. Data copied from the local Postgres
+  (3 customers, 37 deposits, more recent than the SQLite file). Local `.env` now points at Neon too, so
+  the Mac and Vercel share one database and one tick lease.
+- 3.8: preview deployment served the demo from Neon. A live 0.5 CC deposit went seen at ~10 s and
+  swept at ~44 s, with no watcher running.
+- 3.9: committed as `fb67ed1` with the README and this plan; the push redeployed production on its own.
+- 3.10: all pages and the demo API return 200 on naust.namite.xyz, the footer links the three legal
+  pages, the page loads nothing from Google Fonts. `/api/tick` first refused the right secret: the value
+  stored as "sensitive" in Vercel did not match. It was re-stored from the local value as "encrypted",
+  verified equal, updated in GitHub, and production redeployed. The tick and the GitHub workflow now run.
+- Open: deposits sent while nobody has the demo open wait 5 to 15 minutes. Fix needs an always-on
+  watcher, which needs your decision (see the chat).
 - The old SQLite watcher (pid 82841) was stopped with SIGTERM so it could not race the new code.
 
 ## Phase 1: Code on GitHub
@@ -187,7 +198,7 @@ explained above. Phase 3 fixes that.
 
 ## Phase 3: The demo, live
 
-**3.1 `[!]` Provision Neon Postgres through Vercel.**
+**3.1 `[x]` Provision Neon Postgres through Vercel.**
 `vercel integration add neon`, linked to the `naust` project, free plan, region close to Vercel's
 default function region (Washington, D.C., `iad1`). Adds `DATABASE_URL` to the project.
 Could stop it: the terms acceptance described above. If it needs your browser, I stop and ask.
@@ -246,17 +257,17 @@ Point local `.env` at the Neon database. Run the existing checks: `npm run smoke
 with `worker/send-deposit.ts` and watch it reach `swept` through the tick, with the local watcher
 stopped.
 
-**3.8 `[ ]` Verify on a Vercel preview deployment.**
+**3.8 `[x]` Verify on a Vercel preview deployment.**
 `vercel deploy` (not production) gives a private preview URL running the new code with the
 real environment variables. Open `/operator`, send a test deposit to Ada, and watch it go from
 seen to swept on the preview. Check `/customer/Ada` shows the new receipt.
 
-**3.9 `[!]` Commit and push to production.**
+**3.9 `[x]` Commit and push to production.**
 Your standing rule: I propose the commit message and wait for your approval. Proposed:
 `Host the demo on Vercel with Postgres and request-driven ticks`. When you approve, the push to
 `main` triggers the production redeploy on its own.
 
-**3.10 `[ ]` Final checks on `naust.namite.xyz`.**
+**3.10 `[x]` Final checks on `naust.namite.xyz`.**
 - Landing page at desktop and phone widths.
 - Network tab: no requests to `fonts.googleapis.com` or `fonts.gstatic.com` (your compliance
   rule: fonts must not leak visitors' IP addresses).

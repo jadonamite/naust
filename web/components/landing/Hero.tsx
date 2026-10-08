@@ -62,7 +62,7 @@ export function Hero() {
             <Link href="/customer/Ada" className={styles.caption}>
               <span>Ada&rsquo;s receipts</span>
               <span className={styles.captionMuted}>Customer view</span>
-              <ArrowUpRight size={18} weight="regular" aria-hidden="true" className={styles.captionIcon} />
+              <ArrowUpRight size={18} weight="bold" aria-hidden="true" className={styles.captionIcon} />
             </Link>
           </aside>
         </div>

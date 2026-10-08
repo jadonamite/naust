@@ -62,19 +62,23 @@ const SNAPSHOT = {
 }
 
 const DESIGN_WIDTH = 1280
+// Below this width the operator app has its own phone layout (app.module.css, 44rem), so the preview shows that
+// at full size instead of shrinking the desktop screen until nothing is readable.
+const PHONE_MAX = 704
 
 export function ProductPreview() {
   const outer = useRef<HTMLDivElement>(null)
   const inner = useRef<HTMLDivElement>(null)
   const [fit, setFit] = useState({ scale: 1, width: DESIGN_WIDTH, height: 0 })
 
-  // Lay the screen out at least at desktop width, then scale it down to the space available.
+  // Wider than a phone: lay the screen out at desktop width, then scale it down to the space available.
+  // Phone: render the phone layout at the width available, unscaled.
   useEffect(() => {
     const o = outer.current
     const i = inner.current
     if (!o || !i) return
     const measure = () => {
-      const width = Math.max(DESIGN_WIDTH, o.clientWidth)
+      const width = o.clientWidth <= PHONE_MAX ? o.clientWidth : Math.max(DESIGN_WIDTH, o.clientWidth)
       const scale = o.clientWidth / width
       setFit({ scale, width, height: i.offsetHeight * scale })
     }

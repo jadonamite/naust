@@ -162,7 +162,7 @@ export function WhyItHolds() {
         {cards.map((c, i) => (
           <li key={c.title} className={styles.stackCard} style={{ top: `calc(7rem + ${i} * 1.875rem)` }}>
             <span className={styles.iconBlob} aria-hidden="true">
-              <c.icon size={24} weight="regular" />
+              <c.icon size={24} weight="fill" />
             </span>
             <h3 className={`serif ${styles.cardTitle}`}>{c.title}</h3>
             <p className={styles.cardBody}>{c.body}</p>
@@ -324,7 +324,7 @@ export function Builders() {
           {cards.map((c) => (
             <li key={c.title} className={styles.blackCard}>
               <span className={styles.blackIcon} aria-hidden="true">
-                <c.icon size={26} weight="regular" />
+                <c.icon size={26} weight="fill" />
               </span>
               <div>
                 <h3 className={`serif ${styles.blackTitle}`}>{c.title}</h3>

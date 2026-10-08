@@ -61,3 +61,13 @@
 .screen header {
   position: static;
 }
+
+/* Phones see the app's own phone layout at full size, so the window shows more of it. */
+@media (max-width: 44rem) {
+  .viewport {
+    max-height: 34rem;
+  }
+  .url {
+    padding: var(--space-1) var(--space-4);
+  }
+}
