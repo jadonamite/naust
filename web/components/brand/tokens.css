@@ -1,0 +1,21 @@
+/* Brand colours. Source of truth: brand/README.md. No pure white anywhere. */
+:root {
+  --brand-black: #000000;
+  --brand-paper: #f1f1ee;
+  --brand-red: #a63a24;
+
+  --color-bg: var(--brand-paper);
+  --color-fg: var(--brand-black);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: var(--brand-black);
+    --color-fg: var(--brand-paper);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: var(--brand-black);
+  --color-fg: var(--brand-paper);
+}

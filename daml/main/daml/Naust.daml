@@ -1,0 +1,40 @@
+module Naust where
+
+-- A customer's deposit address, owned by the business. The customer party is the address.
+template CustomerAccount
+  with
+    business : Party
+    customer : Party
+    customerRef : Text
+    createdAt : Time
+  where
+    signatory business
+    observer customer
+    ensure customer /= business && customerRef /= ""
+
+-- One attributed deposit. Visible to the business and that customer's address only.
+template DepositReceipt
+  with
+    business : Party
+    customer : Party
+    customerRef : Text
+    amount : Decimal
+    instrumentAdmin : Party
+    instrumentId : Text
+    sender : Party
+    sourceInstructionCid : Text
+    acceptUpdateId : Text
+    sweepUpdateId : Optional Text
+    receivedAt : Time
+  where
+    signatory business
+    observer customer
+    ensure amount > 0.0 && customer /= business
+
+    choice Receipt_RecordSweep : ContractId DepositReceipt
+      with
+        sweepUpdateId_ : Text
+      controller business
+      do
+        assertMsg "sweep already recorded" (sweepUpdateId == None)
+        create this with sweepUpdateId = Some sweepUpdateId_

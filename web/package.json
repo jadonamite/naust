@@ -1,0 +1,29 @@
+{
+  "name": "naust-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "smoke": "node --disable-warning=ExperimentalWarning worker/smoke.ts",
+    "watch": "node --disable-warning=ExperimentalWarning worker/watcher.ts",
+    "seed": "node --disable-warning=ExperimentalWarning worker/seed.ts"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "next": "^16.3.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "typescript": "~6.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

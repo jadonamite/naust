@@ -1,0 +1,47 @@
+.main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--space-30) var(--gutter) var(--space-16);
+}
+.kicker {
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--label-2);
+}
+.title {
+  margin-top: var(--space-2);
+  font-size: var(--text-display);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
+}
+.meta {
+  margin-top: var(--space-4);
+  font-size: var(--text-label);
+  color: var(--label-2);
+}
+.body {
+  margin-top: var(--space-10);
+}
+.body h2 {
+  margin-top: var(--space-10);
+  font-size: var(--text-lead);
+  font-weight: 600;
+  line-height: var(--leading-ui);
+}
+.body p,
+.body li {
+  font-size: var(--text-body);
+  line-height: var(--leading-read);
+  color: var(--label-2);
+}
+.body p {
+  margin-top: var(--space-3);
+}
+.body ul {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-6);
+}
+.body a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}

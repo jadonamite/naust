@@ -1,0 +1,35 @@
+.notice {
+  position: fixed;
+  left: max(var(--space-4), env(safe-area-inset-left));
+  bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: min(30rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  box-shadow: var(--elev-2);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  color: var(--label-2);
+  animation: rise var(--dur-slow) var(--ease-out);
+}
+
+.notice a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.notice button {
+  flex: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

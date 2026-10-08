@@ -1,0 +1,136 @@
+@import './tokens.css';
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-read);
+  letter-spacing: var(--tracking-ui);
+  background: var(--bg);
+  color: var(--label);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img, video, svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -9999px;
+  left: var(--gutter);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  color: var(--label);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-label);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--elev-2);
+}
+.skip-link:focus-visible {
+  top: var(--space-3);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Buttons: pills, 44px minimum hit region. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: var(--leading-ui);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.btn:active { transform: translateY(1px); }
+.btn[aria-disabled='true'], .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-lg { min-height: 3.75rem; padding: var(--space-4) var(--space-10); }
+.btn-sm { padding: var(--space-2) var(--space-5); font-size: var(--text-label); font-weight: 600; }
+
+.btn-accent { background: var(--accent); color: var(--on-accent); }
+.btn-accent:hover { background: var(--accent-hover); }
+.btn-paper { background: var(--surface); color: var(--label); box-shadow: var(--elev-1); }
+.btn-paper:hover { background: var(--brand-paper); }
+.btn-ink { background: var(--surface-dark); color: var(--brand-paper); }
+.btn-ink:hover { background: #000; }
+.btn-light { background: var(--hero-label); color: var(--hero-bg); }
+.btn-light:hover { background: #ffffff; }
+.btn-outline-light { border-color: var(--hero-line); color: var(--hero-label); background: transparent; }
+.btn-outline-light:hover { border-color: var(--hero-label); }
+
+.eyebrow {
+  font-size: var(--text-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  line-height: var(--leading-ui);
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+
+/* App screens paint their own surface so the system dark theme covers the whole page. */
+.app-theme {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--label);
+}
+@media (prefers-color-scheme: dark) {
+  .app-theme { color-scheme: dark; }
+}

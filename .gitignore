@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.daml/
+*.dar
+.DS_Store
+USER.docx
+leno.md
+brand/.venv/
+brand/tools/node_modules/
+docs/reference/
+.playwright-mcp/
+__pycache__/

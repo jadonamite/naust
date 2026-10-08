@@ -1,0 +1,188 @@
+/* The hero sits in a rounded frame 12px inside the viewport, as in the reference. */
+.frame {
+  padding: var(--frame-inset);
+  padding-top: calc(var(--frame-inset) + env(safe-area-inset-top));
+}
+
+.field {
+  position: relative;
+  overflow: hidden;
+  min-height: max(40rem, calc(100svh - 2 * var(--frame-inset)));
+  border-radius: var(--radius-card);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  background-color: var(--hero-bg);
+  background-size: cover;
+  background-position: center 70%;
+  color: var(--hero-label);
+  isolation: isolate;
+}
+
+.grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-8);
+  min-height: inherit;
+  padding: var(--space-30) var(--space-8) var(--space-30);
+}
+
+/* Left column */
+.copy {
+  max-width: 30rem;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lead);
+  line-height: var(--leading-ui);
+  color: var(--hero-label);
+}
+
+.ring {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex: none;
+}
+
+.title {
+  margin-top: var(--space-6);
+  font-size: var(--text-hero);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  max-width: 34rem;
+  margin-top: var(--space-8);
+  font-size: var(--text-lead);
+  line-height: var(--leading-ui);
+  color: var(--hero-label-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-16);
+}
+
+/* Centre: the circular window inside a thin ring */
+.orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(16rem, 28vw, 24.5rem);
+  aspect-ratio: 1;
+}
+
+.ringLine {
+  position: absolute;
+  width: 160%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--hero-ring);
+}
+
+.window {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.04);
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Right column */
+.side {
+  justify-self: end;
+  width: min(100%, 21rem);
+}
+
+.card {
+  aspect-ratio: 1;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 3rem;
+  margin-top: var(--space-3);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hero-line);
+  background: rgb(255 255 255 / 0.04);
+  color: var(--hero-label);
+  font-size: var(--text-lead);
+  line-height: var(--leading-ui);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.caption:hover {
+  border-color: var(--hero-label);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.captionMuted {
+  color: var(--hero-label-2);
+}
+
+.captionIcon {
+  margin-left: auto;
+}
+
+/* The name in giant letters, cut by the bottom of the frame */
+.giant {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--space-8);
+  font-size: var(--text-giant);
+  font-weight: 200;
+  line-height: 0.74;
+  letter-spacing: 0;
+  color: rgb(241 241 238 / 0.82);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 68rem) {
+  .grid {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: var(--space-12);
+    padding: var(--space-30) var(--space-6) var(--space-24);
+  }
+  .orbit {
+    justify-self: center;
+    width: min(70vw, 20rem);
+  }
+  .side {
+    justify-self: stretch;
+    width: 100%;
+    max-width: 24rem;
+  }
+  .card {
+    display: none;
+  }
+}

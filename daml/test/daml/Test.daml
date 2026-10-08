@@ -1,0 +1,46 @@
+module Test where
+
+import Naust
+import Daml.Script
+import DA.Assert
+
+-- SC-004: a customer address sees its own receipts and nothing of another customer's.
+visibility : Script ()
+visibility = script do
+  business <- allocatePartyByHint (PartyIdHint "Business")
+  ada <- allocatePartyByHint (PartyIdHint "Ada")
+  ben <- allocatePartyByHint (PartyIdHint "Ben")
+  exchange <- allocatePartyByHint (PartyIdHint "Exchange")
+  dso <- allocatePartyByHint (PartyIdHint "DSO")
+  now <- getTime
+
+  submit business do
+    createCmd CustomerAccount with business; customer = ada; customerRef = "cus_ada"; createdAt = now
+  submit business do
+    createCmd CustomerAccount with business; customer = ben; customerRef = "cus_ben"; createdAt = now
+
+  let receipt customer ref amount = DepositReceipt with
+        business; customer; customerRef = ref; amount
+        instrumentAdmin = dso; instrumentId = "Amulet"; sender = exchange
+        sourceInstructionCid = ref <> "-instr"; acceptUpdateId = ref <> "-accept"
+        sweepUpdateId = None; receivedAt = now
+  adaReceipt <- submit business do createCmd (receipt ada "cus_ada" 5.0)
+  _ <- submit business do createCmd (receipt ben "cus_ben" 7.0)
+
+  adaSees <- query @DepositReceipt ada
+  map (.customerRef) (map snd adaSees) === ["cus_ada"]
+  benSees <- query @DepositReceipt ben
+  map (.customerRef) (map snd benSees) === ["cus_ben"]
+  businessSees <- query @DepositReceipt business
+  length businessSees === 2
+  exchangeSees <- query @DepositReceipt exchange
+  length exchangeSees === 0
+  adaAccounts <- query @CustomerAccount ada
+  length adaAccounts === 1
+
+  -- Only the business records a sweep, and only once.
+  submitMustFail ada do exerciseCmd adaReceipt Receipt_RecordSweep with sweepUpdateId_ = "sweep-1"
+  swept <- submit business do exerciseCmd adaReceipt Receipt_RecordSweep with sweepUpdateId_ = "sweep-1"
+  submitMustFail business do exerciseCmd swept Receipt_RecordSweep with sweepUpdateId_ = "sweep-2"
+  Some r <- queryContractId ada swept
+  r.sweepUpdateId === Some "sweep-1"

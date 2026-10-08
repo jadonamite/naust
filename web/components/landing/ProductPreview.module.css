@@ -1,0 +1,63 @@
+.section {
+  max-width: calc(88.5rem + 2 * var(--frame-inset));
+  margin: var(--space-4) auto 0;
+  padding: 0 var(--frame-inset);
+}
+
+.window {
+  margin: 0;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--elev-2);
+  overflow: hidden;
+}
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--separator);
+  background: var(--surface-sunk);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 6px;
+}
+.dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #cfcfca;
+}
+
+.url {
+  margin: 0 auto;
+  padding: var(--space-1) var(--space-6);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: var(--text-footnote);
+  color: var(--label-2);
+}
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  max-height: min(40rem, 62vw);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+}
+
+.screen {
+  transform-origin: top left;
+  background: var(--bg);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Inside the preview the header is part of the picture, not a sticky bar. */
+.screen header {
+  position: static;
+}

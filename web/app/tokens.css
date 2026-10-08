@@ -1,0 +1,143 @@
+/*
+  Naust design foundations. Rationale and sources: docs/design-foundations.md.
+  Structure and rhythm follow the dashx.xyz reference; numbers for type, targets and motion follow the HIG web port.
+  Use these tokens only. No arbitrary values.
+*/
+@import '../components/brand/tokens.css';
+
+:root {
+  /* Type families: set by next/font in app/layout.tsx */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), 'Times New Roman', ui-serif, serif;
+
+  /* Type scale, by role. Display sizes are the reference's; interface sizes are the HIG's. */
+  --text-hero: clamp(2.25rem, 1.2rem + 2.9vw, 3.25rem);   /* 36 to 52, hero headline (sans) */
+  --text-display: clamp(2.25rem, 1.6rem + 1.8vw, 3.125rem); /* 36 to 50, page title (serif) */
+  --text-title-1: clamp(1.75rem, 1.4rem + 1vw, 2.375rem);  /* 28 to 38, section heading (serif) */
+  --text-title-2: 2.125rem;  /* 34, card heading (serif) */
+  --text-title-3: 1.5rem;    /* 24, small card heading (serif) */
+  --text-statement: clamp(1.375rem, 1.1rem + 0.8vw, 1.875rem); /* 22 to 30, statement line (sans 500) */
+  --text-lead: 1.125rem;     /* 18, section lead */
+  --text-body: 1rem;         /* 16 */
+  --text-callout: 0.9375rem; /* 15 */
+  --text-label: 0.875rem;    /* 14, eyebrow labels, table headers */
+  --text-footnote: 0.75rem;  /* 12, floor for anything a person must read */
+  --text-giant: clamp(5rem, 2rem + 11vw, 13rem);           /* hero letters */
+
+  --leading-tight: 1.05;   /* serif display */
+  --leading-title: 1.15;
+  --leading-ui: 1.25;      /* labels, buttons, rows */
+  --leading-read: 1.55;    /* running text */
+
+  --tracking-display: -0.05em; /* serif display, matches the reference's -2.5px at 50px */
+  --tracking-title: -0.04em;
+  --tracking-ui: -0.01em;
+  --tracking-eyebrow: 0;
+
+  /* Spacing: 4px base, 8px rhythm (HIG web port). */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+  --space-12: 3rem; --space-16: 4rem; --space-20: 5rem; --space-24: 6rem; --space-30: 7.5rem;
+
+  /* Layout */
+  --frame-inset: 0.75rem;      /* hero frame sits 12px inside the viewport */
+  --content-max: 75rem;        /* 1200 */
+  --panel-max: 78.75rem;       /* 1260, the wider grey panels */
+  --gutter: max(var(--space-4), env(safe-area-inset-left));
+
+  /* Targets: hit regions, not visual sizes. */
+  --target-min: 2.75rem;       /* 44px */
+
+  /* Radius steps, each with one meaning. */
+  --radius-control: 0.75rem;   /* 12: nav links, inline controls */
+  --radius-card: 1rem;         /* 16: cards, frames, accordion rows */
+  --radius-panel: 1.125rem;    /* 18: coloured feature panels */
+  --radius-stack: 1.5rem;      /* 24: grey panels, stacked cards */
+  --radius-hall: 2.5rem;       /* 40: the largest grey panel */
+  --radius-pill: 999px;        /* buttons and chips */
+
+  /* Elevation: three steps. */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+  --elev-2: 0 2px 6px rgb(0 0 0 / 0.06), 0 24px 48px rgb(0 0 0 / 0.10);
+
+  /* Motion */
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 350ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Colour: semantic roles, light theme. Paper replaces white everywhere (brand rule). */
+  --bg: #f4f4f1;
+  --surface: #fbfbf9;
+  --surface-sunk: #ebebe7;     /* grey panels */
+  --surface-dark: #2f2e31;     /* the dark builders panel */
+  --surface-black: #0e0e0f;
+  --label: #0b0b0c;
+  --label-2: #565b66;          /* 6.2:1 on --bg */
+  --label-3: #6b6f76;          /* 4.8:1 on --surface; the floor for readable grey */
+  --separator: #e3e3de;
+  --border: rgb(0 0 0 / 0.09);
+  --accent: var(--brand-red);  /* Falu red, 6.6:1 with paper text */
+  --accent-hover: #8e301d;
+  --on-accent: var(--brand-paper);
+  --focus: #1f5fd6;
+
+  /* Hero (always dark, by design) */
+  --hero-bg: #1c1c1d;
+  --hero-label: #f1f1ee;
+  --hero-label-2: rgb(241 241 238 / 0.72);
+  --hero-ring: rgb(241 241 238 / 0.14);
+  --hero-line: rgb(241 241 238 / 0.24);
+
+  /* Panel tints, taken from the hero artwork (dusk lavender, amber channel, sand) */
+  --tint-dusk: #dfdbee;
+  --tint-dusk-deep: #a99fd3;
+  --tint-dusk-ink: #2c2560;
+  --tint-dusk-ink-2: #4b4390;
+  --tint-rust: #f3e3db;
+  --tint-rust-ink: #7a2a19;
+  --tint-rust-ink-2: #8e301d;
+  --tint-sand: #f1e6cd;
+  --tint-sand-ink: #4e3510;
+  --tint-sand-ink-2: #6e4e1c;
+
+  /* State colours carry a text label too, never colour alone. */
+  --state-progress: #8a5a00;
+  --state-done: #1e6b3a;
+  --state-failed: #a1261b;
+}
+
+/* App screens follow the system theme. The landing page is light by design (see foundations). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app-theme {
+    --bg: #111112;
+    --surface: #1a1a1c;
+    --surface-sunk: #232326;
+    --surface-active: #2c2c31;
+    --label: #f1f1ee;
+    --label-2: #b7b8bd;
+    --label-3: #9a9ca3;
+    --separator: #2c2c30;
+    --border: rgb(255 255 255 / 0.1);
+    --elev-1: 0 1px 3px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    --elev-2: 0 4px 16px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.10);
+    --accent: #d66b53;
+    --accent-hover: #e07a62;
+    --on-accent: #111112;
+    --focus: #7aa7ff;
+    --state-progress: #e3b04b;
+    --state-done: #6fcf8d;
+    --state-failed: #ff8a7a;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
