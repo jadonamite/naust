@@ -98,9 +98,12 @@ A tick runs only while it holds a lease, a single row in Postgres that says who 
 when. Two ticks never run at once, even when several function copies or a local watcher start
 together. A tick that dies loses the lease after 55 seconds.
 
-**Known limit.** When nobody has the demo open, a new deposit waits for the next scheduled tick. GitHub
-treats its 5-minute schedule as best effort, so that can be 5 to 15 minutes. An always-on watcher
-process removes this. It needs a small server outside Vercel; see *Running the watcher* below.
+A fourth runs all the time: **the watcher** (`web/worker/watcher.ts`) on a free Render web service
+(`render.yaml`), ticking every 3 seconds whether or not anyone is watching. Render's free plan sleeps
+a service after 15 minutes without web traffic, so UptimeRobot calls the watcher's `/healthz` page
+every 5 minutes to keep it awake. `/healthz` answers 503 if no tick has finished in 2 minutes, so
+UptimeRobot's alert also fires when the watcher is stuck, not only when it is down. The other three
+triggers remain as backups.
 
 ## Running it locally
 
@@ -132,6 +135,7 @@ All of them live in the repository-root `.env`, which git ignores. `.env.example
 | `CRON_SECRET` | guards `/api/tick`. The same value is stored in Vercel and as a GitHub Actions secret. |
 | `NAUST_POOL` | the customer address pool, default `Ada,Ben,Tokunbo` |
 | `NAUST_POLL_MS` | the watcher's interval, default 3000 |
+| `PORT` | when set, the watcher serves `/healthz` on it (Render sets it) |
 | `NEXT_PUBLIC_SITE_URL` | the public address, used for link previews |
 
 ### Scripts
@@ -150,10 +154,13 @@ Run from `web/`.
 
 ### Running the watcher always on
 
-`npm run watch` is a plain Node process. It runs anywhere that keeps a process alive (a small VPS,
-Render, Railway or Fly.io), given the variables above. With it running against the production
-database, deposits are matched within seconds whether or not anyone is watching. The scheduled
-ticks then find nothing to do, and the lease keeps everything in step.
+`npm run watch` is a plain Node process. With `PORT` set it also serves `/healthz`. `render.yaml`
+deploys it to Render as a free web service: in the Render dashboard choose New, then Blueprint, pick
+this repository, and enter the secret variables when asked (the same values as in `.env`). Then add
+an HTTP monitor in UptimeRobot for `https://<service>.onrender.com/healthz` at a 5-minute interval.
+
+Where Naust goes from here is in [ROADMAP.md](ROADMAP.md), with the engineering detail in
+[docs/engineering-roadmap.md](docs/engineering-roadmap.md).
 
 ## Limits on DevNet
 

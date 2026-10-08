@@ -1,0 +1,37 @@
+# The always-on deposit watcher. A free Render web service (free background workers do not exist), kept awake
+# by UptimeRobot calling /healthz every 5 minutes. It shares the Neon database and the tick lease with the
+# Vercel app, so the two never process the same deposit at once. Secrets are entered in the Render dashboard.
+services:
+  - type: web
+    name: naust-watcher
+    runtime: node
+    plan: free
+    region: virginia
+    rootDir: web
+    buildCommand: npm ci
+    startCommand: npm run watch
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NAUST_POOL
+        value: Ada,Ben,Tokunbo
+      - key: NAUST_POLL_MS
+        value: "3000"
+      - key: DATABASE_URL
+        sync: false
+      - key: KEYCLOAK_TOKEN_URL
+        sync: false
+      - key: KEYCLOAK_CLIENT_ID
+        sync: false
+      - key: HACKCANTON_USERNAME
+        sync: false
+      - key: HACKCANTON_PASSWORD
+        sync: false
+      - key: JSON_API
+        sync: false
+      - key: GRPC_API
+        sync: false
+      - key: VALIDATOR_API
+        sync: false
