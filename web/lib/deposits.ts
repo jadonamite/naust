@@ -23,38 +23,40 @@ export class DepositFailure extends Error {}
 const hashId = (prefix: string, cid: string) => `naust-${prefix}-${createHash('sha256').update(cid).digest('hex').slice(0, 32)}`
 const now = () => new Date().toISOString()
 
-function patch(cid: string, fields: Partial<Deposit>): void {
-  const keys = Object.keys(fields)
-  db()
-    .prepare(`UPDATE deposits SET ${keys.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE instruction_cid = ?`)
-    .run(...(keys.map((k) => (fields as any)[k]) as any[]), now(), cid)
+async function patch(cid: string, fields: Partial<Deposit>): Promise<void> {
+  const sql = await db()
+  await sql`UPDATE deposits SET ${sql({ ...fields, updated_at: now() } as Record<string, any>)} WHERE instruction_cid = ${cid}`
 }
 
-const get = (cid: string) => db().prepare('SELECT * FROM deposits WHERE instruction_cid = ?').get(cid) as Deposit
-
-export function listDeposits(customerId?: string): Deposit[] {
-  return (
-    customerId
-      ? db().prepare('SELECT * FROM deposits WHERE customer_id = ? ORDER BY seen_at DESC').all(customerId)
-      : db().prepare('SELECT * FROM deposits ORDER BY seen_at DESC').all()
-  ) as Deposit[]
+async function get(cid: string): Promise<Deposit> {
+  const sql = await db()
+  const [d] = await sql<Deposit[]>`SELECT * FROM deposits WHERE instruction_cid = ${cid}`
+  return d
 }
 
-export function unfinishedDeposits(): Deposit[] {
-  return db().prepare("SELECT * FROM deposits WHERE state NOT IN ('swept', 'failed') ORDER BY seen_at").all() as Deposit[]
+export async function listDeposits(customerId?: string): Promise<Deposit[]> {
+  const sql = await db()
+  return customerId
+    ? await sql<Deposit[]>`SELECT * FROM deposits WHERE customer_id = ${customerId} ORDER BY seen_at DESC`
+    : await sql<Deposit[]>`SELECT * FROM deposits ORDER BY seen_at DESC`
+}
+
+export async function unfinishedDeposits(): Promise<Deposit[]> {
+  const sql = await db()
+  return await sql<Deposit[]>`SELECT * FROM deposits WHERE state NOT IN ('swept', 'failed') ORDER BY seen_at`
 }
 
 // Record an incoming instruction once. Returns true if it was new.
-export function recordSeen(instruction: CreatedEvent, customer: Customer, ledgerOffset: number): boolean {
+export async function recordSeen(instruction: CreatedEvent, customer: Customer, ledgerOffset: number): Promise<boolean> {
   const t = instruction.createArgument.transfer
-  const res = db()
-    .prepare(
-      `INSERT OR IGNORE INTO deposits
-       (instruction_cid, customer_id, amount, instrument, sender, state, seen_offset, seen_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 'seen', ?, ?, ?)`,
-    )
-    .run(instruction.contractId, customer.id, t.amount, `${t.instrumentId.id}@${t.instrumentId.admin}`, t.sender, ledgerOffset, now(), now())
-  return res.changes > 0
+  const sql = await db()
+  const res = await sql`
+    INSERT INTO deposits
+      (instruction_cid, customer_id, amount, instrument, sender, state, seen_offset, seen_at, updated_at)
+    VALUES (${instruction.contractId}, ${customer.id}, ${t.amount}, ${`${t.instrumentId.id}@${t.instrumentId.admin}`},
+      ${t.sender}, 'seen', ${ledgerOffset}, ${now()}, ${now()})
+    ON CONFLICT (instruction_cid) DO NOTHING`
+  return res.count > 0
 }
 
 const isAmuletOf = (owner: string) => (c: CreatedEvent) => c.templateId.endsWith(AMULET) && c.createArgument.owner === owner
@@ -77,7 +79,7 @@ async function accept(d: Deposit, customer: Customer): Promise<void> {
   }
   const holding = created.find(isAmuletOf(customer.party))
   if (!holding) throw new DepositFailure('instruction expired or was withdrawn before it was accepted')
-  patch(d.instruction_cid, { state: 'accepted', accept_update_id: updateId, holding_cid: holding.contractId })
+  await patch(d.instruction_cid, { state: 'accepted', accept_update_id: updateId, holding_cid: holding.contractId })
 }
 
 async function findReceipt(business: string, instructionCid: string): Promise<CreatedEvent | undefined> {
@@ -114,11 +116,11 @@ async function receipt(d: Deposit, customer: Customer, business: string): Promis
     })
     r = createdIn(tx).find((e) => e.templateId.endsWith(':Naust:DepositReceipt'))!
   }
-  patch(d.instruction_cid, { state: 'receipted', receipt_cid: r.contractId })
+  await patch(d.instruction_cid, { state: 'receipted', receipt_cid: r.contractId })
 }
 
 async function sweep(d: Deposit, customer: Customer, treasury: string): Promise<void> {
-  if (d.state === 'receipted') patch(d.instruction_cid, { state: 'sweeping' })
+  if (d.state === 'receipted') await patch(d.instruction_cid, { state: 'sweeping' })
   let instructionCid = d.sweep_instruction_cid
   let sweepUpdateId = d.sweep_update_id
 
@@ -141,7 +143,7 @@ async function sweep(d: Deposit, customer: Customer, treasury: string): Promise<
       if (!instructionCid) sweepUpdateId = found.updateId
     }
     if (!instructionCid && !sweepUpdateId) throw new DepositFailure('sweep produced neither an offer nor a direct transfer')
-    patch(d.instruction_cid, { sweep_instruction_cid: instructionCid, sweep_update_id: sweepUpdateId })
+    await patch(d.instruction_cid, { sweep_instruction_cid: instructionCid, sweep_update_id: sweepUpdateId })
   }
 
   if (instructionCid && !sweepUpdateId) {
@@ -155,7 +157,7 @@ async function sweep(d: Deposit, customer: Customer, treasury: string): Promise<
       }
       sweepUpdateId = found.updateId
     }
-    patch(d.instruction_cid, { sweep_update_id: sweepUpdateId })
+    await patch(d.instruction_cid, { sweep_update_id: sweepUpdateId })
   }
 }
 
@@ -178,25 +180,25 @@ async function recordSweep(d: Deposit, business: string): Promise<void> {
     })
     receiptCid = createdIn(tx).find((e) => e.templateId.endsWith(':Naust:DepositReceipt'))!.contractId
   }
-  patch(d.instruction_cid, { state: 'swept', receipt_cid: receiptCid, error: null })
+  await patch(d.instruction_cid, { state: 'swept', receipt_cid: receiptCid, error: null })
 }
 
 // Drive one deposit as far as it will go. Errors are recorded; transient ones retry on the next poll.
 export async function advance(cid: string, customer: Customer): Promise<Deposit> {
   const treasury = await treasuryParty()
   try {
-    let d = get(cid)
-    if (d.state === 'seen') await accept(d, customer), (d = get(cid))
-    if (d.state === 'accepted') await receipt(d, customer, treasury), (d = get(cid))
+    let d = await get(cid)
+    if (d.state === 'seen') await accept(d, customer), (d = await get(cid))
+    if (d.state === 'accepted') await receipt(d, customer, treasury), (d = await get(cid))
     if (d.state === 'receipted' || d.state === 'sweeping') {
-      if (!d.sweep_update_id) await sweep(d, customer, treasury), (d = get(cid))
+      if (!d.sweep_update_id) await sweep(d, customer, treasury), (d = await get(cid))
       await recordSweep(d, treasury)
     }
   } catch (e) {
-    const d = get(cid)
+    const d = await get(cid)
     const attempts = d.attempts + 1
     const fatal = e instanceof DepositFailure || attempts >= MAX_ATTEMPTS
-    patch(cid, { attempts, error: (e as Error).message.slice(0, 500), ...(fatal ? { state: 'failed' as const } : {}) })
+    await patch(cid, { attempts, error: (e as Error).message.slice(0, 500), ...(fatal ? { state: 'failed' as const } : {}) })
   }
-  return get(cid)
+  return await get(cid)
 }

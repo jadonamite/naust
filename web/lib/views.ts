@@ -49,9 +49,9 @@ export type ReceiptView = {
 
 const sum = (xs: string[]) => xs.reduce((s, x) => s + Number(x), 0).toFixed(10)
 
-export function customerViews(): CustomerView[] {
-  const deposits = listDeposits()
-  return listCustomers().map((c) => {
+export async function customerViews(): Promise<CustomerView[]> {
+  const [deposits, customers] = await Promise.all([listDeposits(), listCustomers()])
+  return customers.map((c) => {
     const own = deposits.filter((d) => d.customer_id === c.id)
     return {
       id: c.id,
@@ -67,9 +67,10 @@ export function customerViews(): CustomerView[] {
   })
 }
 
-export function depositViews(customerId?: string): DepositView[] {
-  const refs = new Map(listCustomers().map((c) => [c.id, c.ref]))
-  return listDeposits(customerId).map((d) => ({
+export async function depositViews(customerId?: string): Promise<DepositView[]> {
+  const [customers, deposits] = await Promise.all([listCustomers(), listDeposits(customerId)])
+  const refs = new Map(customers.map((c) => [c.id, c.ref]))
+  return deposits.map((d) => ({
     id: d.instruction_cid,
     customerId: d.customer_id,
     customerRef: refs.get(d.customer_id) ?? '',

@@ -1,5 +1,5 @@
 // SC-003: kill the watcher mid-deposit several times, restart it, and check nothing is credited twice or missed.
-// Sends from the treasury wallet, so a correct run leaves the treasury balance unchanged.
+// The treasury must change by exactly the amount sent from outside it: nothing credited twice, nothing missed.
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process'
 import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, treasuryParty } from '../lib/ledger.ts'
 import { listCustomers } from '../lib/customers.ts'
@@ -14,10 +14,14 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const treasury = await treasuryParty()
 const balance = async () => amuletBalance((await activeContracts(treasury, AMULET)).filter((c) => c.createArgument.owner === treasury))
 const before = await balance()
-const known = new Set(listDeposits().map((d) => d.instruction_cid))
+const known = new Set((await listDeposits()).map((d) => d.instruction_cid))
 
+// Sent from the funded Exchange party, the treasury gains each amount once; sent from the treasury wallet, it nets zero.
+let expected = 0
 for (const [ref, amount] of sends) {
-  console.log(execFileSync('node', [...node, 'worker/send-deposit.ts', ref, amount]).toString().trim())
+  const out = execFileSync('node', [...node, 'worker/send-deposit.ts', ref, amount]).toString().trim()
+  console.log(out)
+  if (out.startsWith('Exchange sent')) expected += Number(amount)
 }
 
 let watcher: ChildProcess | undefined
@@ -39,9 +43,10 @@ for (const at of KILL_AFTER_MS) {
   start()
 }
 
-const ours = () => listDeposits().filter((d) => !known.has(d.instruction_cid))
+const ours = async () => (await listDeposits()).filter((d) => !known.has(d.instruction_cid))
+const done = (ds: Awaited<ReturnType<typeof ours>>) => ds.length === sends.length && ds.every((d) => d.state === 'swept' || d.state === 'failed')
 const deadline = Date.now() + FINISH_TIMEOUT_MS
-while (Date.now() < deadline && !(ours().length === sends.length && ours().every((d) => d.state === 'swept' || d.state === 'failed'))) {
+while (Date.now() < deadline && !done(await ours())) {
   await sleep(1_000)
 }
 watcher!.kill('SIGTERM')
@@ -49,7 +54,7 @@ await sleep(1_000)
 
 let failures = 0
 const check = (ok: boolean, msg: string) => (console.log(ok ? 'PASS' : 'FAIL', msg), ok || failures++)
-const deposits = ours()
+const deposits = await ours()
 check(deposits.length === sends.length, `${deposits.length} of ${sends.length} deposits recorded`)
 check(deposits.every((d) => d.state === 'swept'), `all swept (${deposits.map((d) => d.state).join(', ')})`)
 
@@ -58,11 +63,11 @@ for (const d of deposits) {
   const n = receipts.filter((r) => r.createArgument.sourceInstructionCid === d.instruction_cid).length
   check(n === 1, `exactly one receipt for ${d.amount} CC (found ${n})`)
 }
-for (const c of listCustomers()) {
+for (const c of await listCustomers()) {
   const acs = await activeContracts(c.party)
   check(amuletBalance(acs.filter((x) => x.createArgument.owner === c.party)) === 0, `${c.ref} address holds nothing`)
   check(!acs.some((x) => x.templateId.endsWith(TRANSFER_INSTRUCTION)), `${c.ref} has no pending transfers`)
 }
 const delta = (await balance()) - before
-check(Math.abs(delta) < 1e-9, `treasury net change is zero (${delta})`)
+check(Math.abs(delta - expected) < 1e-9, `treasury changed by exactly ${expected} (${delta})`)
 process.exit(failures ? 1 : 0)

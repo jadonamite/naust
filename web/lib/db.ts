@@ -1,9 +1,7 @@
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import postgres from 'postgres'
 import { env } from './env.ts'
 
-// Off-ledger state shared by the Next.js app and the watcher process. The ledger stays the source of truth for receipts.
+// Off-ledger state shared by the Next.js app and the tick. The ledger stays the source of truth for receipts.
 export const DEPOSIT_STATES = ['seen', 'accepted', 'receipted', 'sweeping', 'swept', 'failed'] as const
 export type DepositState = (typeof DEPOSIT_STATES)[number]
 
@@ -28,7 +26,8 @@ export type Deposit = {
   updated_at: string
 }
 
-// Each entry runs once, in order; PRAGMA user_version records how many have run.
+// Each entry runs once, in order; schema_version records how many have run.
+// Timestamps stay ISO-8601 text, as they were in SQLite, so ordering and comparisons are unchanged.
 const migrations = [
   `CREATE TABLE customers (
      id TEXT PRIMARY KEY,
@@ -49,36 +48,66 @@ const migrations = [
      holding_cid TEXT,
      sweep_instruction_cid TEXT,
      sweep_update_id TEXT,
-     seen_offset INTEGER NOT NULL,
+     seen_offset BIGINT NOT NULL,
      error TEXT,
      attempts INTEGER NOT NULL DEFAULT 0,
      seen_at TEXT NOT NULL,
      updated_at TEXT NOT NULL
    );
    CREATE INDEX deposits_customer_seen ON deposits(customer_id, seen_at);
-   CREATE INDEX deposits_state ON deposits(state);`,
+   CREATE INDEX deposits_state ON deposits(state);
+   -- One row per named lease; a tick runs only while it holds the 'tick' lease (see lib/tick.ts).
+   CREATE TABLE lease (
+     name TEXT PRIMARY KEY,
+     holder TEXT NOT NULL,
+     until TIMESTAMPTZ NOT NULL
+   );`,
 ]
 
-let instance: DatabaseSync | undefined
+export type Sql = postgres.Sql<{ bigint: number }>
 
-export function db(): DatabaseSync {
-  if (instance) return instance
-  mkdirSync(dirname(env.dbPath), { recursive: true })
-  const d = new DatabaseSync(env.dbPath)
-  // WAL lets the app read while the watcher writes; busy_timeout waits out brief locks between the two processes.
-  d.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;')
-  const { user_version } = d.prepare('PRAGMA user_version').get() as { user_version: number }
-  for (let i = user_version; i < migrations.length; i++) {
-    d.exec('BEGIN')
-    try {
-      d.exec(migrations[i])
-      d.exec(`PRAGMA user_version = ${i + 1}`)
-      d.exec('COMMIT')
-    } catch (e) {
-      d.exec('ROLLBACK')
+let instance: Sql | undefined
+let ready: Promise<Sql> | undefined
+
+async function migrate(sql: Sql): Promise<void> {
+  await sql.begin(async (tx) => {
+    // Two cold starts migrating at once would collide; the lock makes the second wait for the first.
+    await tx`SELECT pg_advisory_xact_lock(7461001)`
+    await tx`CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)`
+    const [row] = await tx<{ version: number }[]>`SELECT version FROM schema_version`
+    const from = row?.version ?? 0
+    for (let i = from; i < migrations.length; i++) await tx.unsafe(migrations[i]).simple()
+    if (!row) await tx`INSERT INTO schema_version (version) VALUES (${migrations.length})`
+    else if (from < migrations.length) await tx`UPDATE schema_version SET version = ${migrations.length}`
+  })
+}
+
+export function db(): Promise<Sql> {
+  if (ready) return ready
+  instance = postgres(env.databaseUrl, {
+    // Serverless functions open many short-lived copies; keep each one's pool small.
+    max: 5,
+    idle_timeout: 20,
+    // Neon's pooled endpoint runs PgBouncer in transaction mode, which cannot hold prepared statements.
+    prepare: false,
+    onnotice: () => {},
+    // BIGINT (type 20) comes back as a string by default; ledger offsets fit comfortably in a JS number.
+    types: { bigint: { to: 20, from: [20], serialize: (x: number) => String(x), parse: (x: string) => Number(x) } },
+  }) as Sql
+  ready = migrate(instance).then(
+    () => instance!,
+    (e) => {
+      ready = undefined
       throw e
-    }
-  }
-  instance = d
-  return d
+    },
+  )
+  return ready
+}
+
+// Close the pool so one-off scripts can exit.
+export async function closeDb(): Promise<void> {
+  if (!instance) return
+  await instance.end({ timeout: 5 })
+  instance = undefined
+  ready = undefined
 }

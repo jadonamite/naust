@@ -12,7 +12,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const watcher = spawn('node', [...node, 'worker/watcher.ts'], { stdio: 'ignore' })
 process.on('exit', () => watcher.kill('SIGTERM'))
 await sleep(4_000)
-const known = new Set(listDeposits().map((d) => d.instruction_cid))
+const known = new Set((await listDeposits()).map((d) => d.instruction_cid))
 
 const committed: { ref: string; at: number }[] = []
 for (let i = 0; i < N; i++) {
@@ -22,14 +22,15 @@ for (let i = 0; i < N; i++) {
   await sleep(2_000)
 }
 
-const ours = () => listDeposits().filter((d) => !known.has(d.instruction_cid)).sort((a, b) => a.seen_at.localeCompare(b.seen_at))
+const ours = async () => (await listDeposits()).filter((d) => !known.has(d.instruction_cid)).sort((a, b) => a.seen_at.localeCompare(b.seen_at))
+const done = (ds: Awaited<ReturnType<typeof ours>>) => ds.length === N && ds.every((d) => d.state === 'swept' || d.state === 'failed')
 const deadline = Date.now() + 120_000
-while (Date.now() < deadline && !(ours().length === N && ours().every((d) => d.state === 'swept' || d.state === 'failed'))) {
+while (Date.now() < deadline && !done(await ours())) {
   await sleep(1_000)
 }
 watcher.kill('SIGTERM')
 
-const rows = ours().map((d, i) => ({
+const rows = (await ours()).map((d, i) => ({
   customer: committed[i]?.ref,
   matched_s: (Date.parse(d.seen_at) - committed[i].at) / 1000,
   swept_s: (Date.parse(d.updated_at) - committed[i].at) / 1000,

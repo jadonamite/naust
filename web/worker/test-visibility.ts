@@ -4,7 +4,7 @@ import { listCustomers } from '../lib/customers.ts'
 import { listDeposits } from '../lib/deposits.ts'
 
 const business = await treasuryParty()
-const customers = listCustomers()
+const customers = await listCustomers()
 let failures = 0
 const check = (ok: boolean, msg: string) => {
   console.log(ok ? 'PASS' : 'FAIL', msg)
@@ -12,7 +12,7 @@ const check = (ok: boolean, msg: string) => {
 }
 
 const all = await activeContracts(business, ':Naust:DepositReceipt')
-const swept = listDeposits().filter((d) => d.state === 'swept')
+const swept = (await listDeposits()).filter((d) => d.state === 'swept')
 check(swept.every((d) => all.some((r) => r.createArgument.sourceInstructionCid === d.instruction_cid)),
   `business sees a receipt for each of ${swept.length} swept deposits`)
 

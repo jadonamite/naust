@@ -18,7 +18,10 @@ const required = [
   'VALIDATOR_API',
 ] as const
 
-const missing = required.filter((k) => !process.env[k])
+// The Neon integration on Vercel sets DATABASE_URL; POSTGRES_URL is the older Vercel Postgres name for the same thing.
+process.env.DATABASE_URL ??= process.env.POSTGRES_URL
+
+const missing = [...required, 'DATABASE_URL'].filter((k) => !process.env[k])
 if (missing.length) {
   throw new Error(`Missing settings in ${file}: ${missing.join(', ')}. Copy .env.example to .env and fill them in.`)
 }
@@ -32,6 +35,6 @@ export const env = {
   password: v('HACKCANTON_PASSWORD'),
   jsonApi: v('JSON_API').replace(/\/$/, ''),
   validatorApi: v('VALIDATOR_API').replace(/\/$/, '') + '/api/validator/v0',
-  dbPath: resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.NAUST_DB ?? 'data/naust.db'),
+  databaseUrl: process.env.DATABASE_URL as string,
   pollMs: Number(process.env.NAUST_POLL_MS ?? 3000),
 }

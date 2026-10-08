@@ -7,6 +7,7 @@ import { ledgerUserId } from '../lib/auth.ts'
 import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, call, treasuryParty } from '../lib/ledger.ts'
 import { acceptInstruction, transfer } from '../lib/registry.ts'
 import { listCustomers } from '../lib/customers.ts'
+import { closeDb } from '../lib/db.ts'
 
 const [first, second] = process.argv.slice(2)
 const treasury = await treasuryParty()
@@ -45,7 +46,7 @@ if (first === '--fund') {
   await acceptInstruction(cid, exchange)
   console.log('funded Exchange with', second, 'CC; balance', amuletBalance((await exchangeHoldings()) ?? []))
 } else {
-  const customer = listCustomers().find((c) => c.ref === first)
+  const customer = (await listCustomers()).find((c) => c.ref === first)
   if (!customer || !second) throw new Error('usage: send-deposit.ts <customer-ref> <amount> | --fund <amount>')
   const holdings = await exchangeHoldings()
   if (holdings?.length && amuletBalance(holdings) >= Number(second)) {
@@ -57,3 +58,4 @@ if (first === '--fund') {
     console.log('treasury wallet sent', second, 'CC to', customer.ref, '(no funded Exchange party) instr', cid.slice(0, 12))
   }
 }
+await closeDb()

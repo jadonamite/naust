@@ -12,3 +12,9 @@ brand/tools/node_modules/
 docs/reference/
 .playwright-mcp/
 __pycache__/
+.vercel
+.env*
+# Neon agent docs installed by the Vercel integration; local tooling, not project code.
+.agents/
+.claude/skills/
+skills-lock.json
