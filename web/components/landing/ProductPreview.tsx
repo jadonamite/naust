@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CustomerView, DepositView } from '@/lib/views.ts'
 import { AppHeader } from '@/components/app/AppHeader'
 import { OperatorView } from '@/components/app/OperatorScreen'
+import { partyName, senderName } from '@/lib/party.ts'
 import styles from './ProductPreview.module.css'
 
 // The real operator screen, rendered from a snapshot of Canton DevNet data taken on 7 Oct 2026.
@@ -15,7 +16,7 @@ const customer = (id: string, ref: string, deposits: number, received: string): 
   id,
   ref,
   address: `86bb3d93-${ref}::${NS}`,
-  label: `86bb3d93-${ref}`,
+  label: partyName(`86bb3d93-${ref}::${NS}`),
   accountCid: null,
   createdAt: '2026-10-06T14:31:38.815Z',
   deposits,
@@ -30,7 +31,7 @@ const deposit = (id: string, ref: string, amount: string, sender: string, seenAt
   amount,
   instrument: 'Amulet',
   sender,
-  senderLabel: sender.split('::')[0],
+  senderLabel: senderName(sender),
   state: 'swept',
   error: null,
   seenAt,
@@ -41,7 +42,7 @@ const deposit = (id: string, ref: string, amount: string, sender: string, seenAt
 })
 
 const SNAPSHOT = {
-  treasury: { loading: false, data: { party: TREASURY, label: TREASURY.split('::')[0], balance: '962.1619384779' } },
+  treasury: { loading: false, data: { party: TREASURY, label: partyName(TREASURY), balance: '962.1619384779' } },
   customers: {
     loading: false,
     data: [

@@ -2,9 +2,10 @@ import type { Customer, Deposit } from './db.ts'
 import { listCustomers } from './customers.ts'
 import { listDeposits } from './deposits.ts'
 import { AMULET, activeContracts, amuletBalance, treasuryParty, type CreatedEvent } from './ledger.ts'
+import { partyName, senderName } from './party.ts'
 
-// JSON shapes the screens read. Party IDs stay whole; `label` is the part before `::` for display.
-export const label = (party: string) => party.split('::')[0]
+// JSON shapes the screens read. Party IDs stay whole; `label` is the readable name (see lib/party.ts).
+export const label = partyName
 
 export type CustomerView = {
   id: string
@@ -77,7 +78,7 @@ export async function depositViews(customerId?: string): Promise<DepositView[]> 
     amount: d.amount,
     instrument: d.instrument.slice(0, d.instrument.indexOf('@')),
     sender: d.sender,
-    senderLabel: label(d.sender),
+    senderLabel: senderName(d.sender),
     state: d.state,
     error: d.error,
     seenAt: d.seen_at,
@@ -106,7 +107,7 @@ export async function receiptViews(customer: Customer): Promise<ReceiptView[]> {
         amount: a.amount,
         instrumentId: a.instrumentId,
         sender: a.sender,
-        senderLabel: label(a.sender),
+        senderLabel: senderName(a.sender),
         receivedAt: a.receivedAt,
         acceptUpdateId: a.acceptUpdateId,
         sweepUpdateId: a.sweepUpdateId ?? null,

@@ -51,6 +51,10 @@ A product needs a node where Naust can create a party for every new customer on 
   Foundation and the HackCanton organisers; it is not something this repo can decide.
 - Replace the address pool (`NAUST_POOL`, `poolParties()` in `web/lib/customers.ts`) with party
   allocation through the Ledger API, inside the business's namespace.
+- Name every address under the business, ENS-style. Allocate each customer's party with the hint
+  `<Business>-<customer ref>` (for example `MagnaXchange-Ada`), so the real party ID starts with the
+  name the screens already show (`web/lib/party.ts`). Canton's own name service (the Amulet Name
+  Service run by the validator) can then map a readable name to the party for wallets that support it.
 - Leased addresses for very large customer bases. Each address is a Canton party, and the network
   has a party limit in the low millions. A business with many one-off depositors should rotate
   addresses from a fixed pool instead, the pattern suggested in the same forum thread.

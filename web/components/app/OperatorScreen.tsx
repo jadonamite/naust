@@ -4,7 +4,8 @@ import Link from 'next/link'
 import type { CustomerView, DepositView } from '@/lib/views.ts'
 import { CopyButton } from './CopyButton'
 import { StatePill } from './StatePill'
-import { amount, clock, short, usePoll } from './usePoll'
+import { amount, clock, usePoll } from './usePoll'
+import { partyName } from '@/lib/party.ts'
 import styles from './app.module.css'
 
 export type Treasury = { party: string; label: string; balance: string }
@@ -61,7 +62,7 @@ export function OperatorView({
           <p className={`serif ${styles.statValue}`}>
             {treasury.data ? `${amount(treasury.data.balance)} CC` : treasury.loading ? '…' : 'Unavailable'}
           </p>
-          {treasury.data && <p className={styles.statFoot}>{short(treasury.data.label, 18)}</p>}
+          {treasury.data && <p className={styles.statFoot} title={treasury.data.party}>{partyName(treasury.data.party)}</p>}
         </div>
         <div className={styles.stat}>
           <p className={styles.statLabel}>Deposits matched</p>
@@ -106,7 +107,7 @@ export function OperatorView({
                     </td>
                     <td>
                       <span className={styles.address}>
-                        <code title={c.address}>{short(c.address, 16)}</code>
+                        <code title={c.address}>{partyName(c.address)}</code>
                         <CopyButton value={c.address} label={`Copy ${c.ref}'s deposit address`} />
                       </span>
                     </td>
@@ -135,7 +136,7 @@ export function OperatorView({
                 <span className={styles.feedTime}>{clock(d.seenAt)}</span>
                 <span className={styles.feedMain}>
                   <strong>{amount(d.amount)} CC</strong> for <strong>{d.customerRef}</strong>
-                  <span className={styles.feedFrom}>from {short(d.senderLabel, 18)}, no memo</span>
+                  <span className={styles.feedFrom}>from {d.senderLabel}, no memo</span>
                 </span>
                 <StatePill state={d.state} />
               </li>

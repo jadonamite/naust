@@ -137,6 +137,7 @@ All of them live in the repository-root `.env`, which git ignores. `.env.example
 | `NAUST_POLL_MS` | the watcher's interval, default 3000 |
 | `PORT` | when set, the watcher serves `/healthz` on it (Render sets it) |
 | `NEXT_PUBLIC_SITE_URL` | the public address, used for link previews |
+| `NEXT_PUBLIC_NAUST_BUSINESS` | the business name addresses are shown under, ENS-style (`MagnaXchange-Ada`). Default `MagnaXchange`. |
 
 ### Scripts
 

@@ -12,6 +12,7 @@ import {
   Vault,
   Wallet,
 } from '@phosphor-icons/react/dist/ssr'
+import { BUSINESS_NAME } from '@/lib/party.ts'
 import styles from './landing.module.css'
 
 const has = (p: string) => existsSync(join(/*turbopackIgnore: true*/ process.cwd(), 'public', p))
@@ -56,7 +57,7 @@ export function LiveMatching() {
                 Matched to <strong>Ada</strong>
               </p>
               <p className={`serif ${styles.traceAmount}`}>1.5 CC</p>
-              <p className={styles.traceMeta}>No memo. Sent to 86bb3d93-Ada</p>
+              <p className={styles.traceMeta}>No memo. Sent to {BUSINESS_NAME}-Ada</p>
             </div>
             <ol className={styles.steps}>
               <li>
@@ -199,7 +200,7 @@ export function Ledger() {
               <dt>Customer</dt>
               <dd>Ada</dd>
               <dt>Address</dt>
-              <dd>86bb3d93-Ada</dd>
+              <dd>{BUSINESS_NAME}-Ada</dd>
               <dt>Pays from</dt>
               <dd>Any wallet</dd>
             </dl>
@@ -232,8 +233,8 @@ export function Ledger() {
 }
 
 export function Precedent() {
-  const addresses = ['ada', 'ben', 'tokunbo', 'amara', 'lucas', 'mei', 'ifeoma', 'sven', 'priya', 'jonas']
-  const row = addresses.map((a) => `${a}::1220…`)
+  const addresses = ['Ada', 'Ben', 'Tokunbo', 'Amara', 'Lucas', 'Mei', 'Ifeoma', 'Sven', 'Priya', 'Jonas']
+  const row = addresses.map((a) => `${BUSINESS_NAME}-${a}`)
   return (
     <section className={styles.precedent}>
       <p className="eyebrow">Customer addresses</p>

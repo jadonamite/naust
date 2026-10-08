@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { CustomerView, ReceiptView } from '@/lib/views.ts'
 import { CopyButton } from './CopyButton'
 import { amount, day, short, usePoll } from './usePoll'
+import { partyName } from '@/lib/party.ts'
 import styles from './app.module.css'
 
 export function CustomerScreen({ id }: { id: string }) {
@@ -45,7 +46,7 @@ export function CustomerScreen({ id }: { id: string }) {
         </p>
         {c ? (
           <div className={styles.bigAddress}>
-            <code>{c.address}</code>
+            <code title={c.address}>{partyName(c.address)}</code>
             <CopyButton value={c.address} label="Copy your deposit address" />
           </div>
         ) : (
@@ -71,7 +72,7 @@ export function CustomerScreen({ id }: { id: string }) {
                 </div>
                 <dl className={styles.receiptFields}>
                   <dt>From</dt>
-                  <dd>{short(r.senderLabel, 18)}</dd>
+                  <dd>{r.senderLabel}</dd>
                   <dt>Accepted in</dt>
                   <dd>
                     <code>{short(r.acceptUpdateId)}</code>
