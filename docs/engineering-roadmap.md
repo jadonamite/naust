@@ -11,18 +11,17 @@ should happen. Each phase says why it comes where it does.
   point. Tested by killing the watcher four times mid-deposit.
 - Receipts on the ledger that only the business and that customer can see, enforced by the Daml
   contract.
-- Hosting: the app on Vercel, the database on Neon, the watcher always on (Render plus UptimeRobot).
+- Hosting: the app on Vercel, the database on Neon Postgres, the watcher always on with a health check.
 
 ## Phase 0: confirm someone will run it
 
-Before building more, put the demo in front of the people who asked for it. The Canton forum thread
-that started this
-([per-user deposit destination without a memo](https://forum.canton.network/t/per-user-deposit-destination-on-a-single-party-without-a-memo-field-is-there-a-pattern/9207))
-names two: `joao_trakx` at Trakx and `kevmuko` at Walley wallet. Ask each one three things. Would they
-run this next to their own node? What would they need from it first? What do they use today?
+Before building more, put the demo in front of the operators who asked for this pattern on the Canton
+forum
+([per-user deposit destination without a memo](https://forum.canton.network/t/per-user-deposit-destination-on-a-single-party-without-a-memo-field-is-there-a-pattern/9207)).
+Three questions for each: would they run it beside their own node, what would they need from it
+first, and what do they use today?
 
-Why first: everything below is weeks of work. Two operators saying "yes, if it does X" decides what
-X is. If neither would run it, the rest of this file should not happen.
+Everything below is weeks of work, and their answers decide its order.
 
 ## Phase 1: decide the shape
 
@@ -104,19 +103,3 @@ Today the only way in is the demo screens and the seed script. A business needs:
   Foundation before anyone counts on it.
 - Pricing for the self-hosted version (licence or support), or per-deposit pricing if the hosted
   version happens.
-
-## What it costs to run today
-
-| Piece | Plan | Cost |
-|---|---|---|
-| Web app | Vercel Hobby | free |
-| Database | Neon free (through Vercel) | free |
-| Watcher | Render free web service | free |
-| Keep-alive and uptime alerts | UptimeRobot free, 5-minute checks | free |
-| Backstop ticks | GitHub Actions, public repository | free |
-
-Free plans have limits worth knowing. Render's free service sleeps after 15 minutes without web
-traffic, which is what the UptimeRobot check prevents. Render may also restart the service at any
-time; the watcher picks up where it stopped, because every step checks the ledger first. Vercel
-Hobby is licensed for non-commercial use only. Once Naust earns money, the Vercel project has to move
-to the Pro plan.

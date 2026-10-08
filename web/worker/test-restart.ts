@@ -1,5 +1,5 @@
-// SC-003: kill the watcher mid-deposit several times, restart it, and check nothing is credited twice or missed.
-// The treasury must change by exactly the amount sent from outside it: nothing credited twice, nothing missed.
+// Kill the watcher mid-deposit several times, restart it, and check every deposit is credited exactly once:
+// the treasury must change by exactly the amount sent from outside it.
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process'
 import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, treasuryParty } from '../lib/ledger.ts'
 import { listCustomers } from '../lib/customers.ts'

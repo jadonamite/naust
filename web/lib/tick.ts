@@ -5,10 +5,8 @@ import { TRANSFER_INSTRUCTION, activeContracts, ledgerEnd } from './ledger.ts'
 import { listCustomers, reconcileCustomers } from './customers.ts'
 import { advance, recordSeen, unfinishedDeposits } from './deposits.ts'
 
-// One pass of deposit work: check every customer address, record new incoming transfers, drive each unfinished
-// deposit as far as it will go. Runs from the local watcher loop, from GET /api/tick (cron), and after screen polls.
-// The steps survive a restart but were never meant to run twice at once, so a tick only runs while it holds the
-// 'tick' lease. A tick that dies mid-way loses the lease when it expires.
+// One pass of deposit work: record new incoming transfers and advance every unfinished deposit.
+// Only one tick runs at a time, enforced by the 'tick' lease; a tick that dies releases it on expiry.
 const LEASE_SECONDS = 55
 
 export type TickEvent = { ref: string; from: string; to: string; error?: string }
@@ -59,8 +57,7 @@ async function work(): Promise<{ seen: number; events: TickEvent[] }> {
     }),
   )
 
-  // Each deposit advances on its own, so one slow deposit does not hold up the rest. All finish before the tick
-  // returns: a serverless function may be frozen once it responds, so nothing is left running in the background.
+  // Deposits advance concurrently; all finish before returning, since a serverless function may be frozen after it responds.
   const events: TickEvent[] = []
   await Promise.all(
     (await unfinishedDeposits()).map(async (d) => {

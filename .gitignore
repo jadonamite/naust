@@ -1,20 +1,19 @@
+# Environment
 .env
 .env.*
 !.env.example
+
+# Dependencies and build output
 node_modules/
+.next/
+.vercel
 .daml/
 *.dar
-.DS_Store
-USER.docx
-leno.md
-brand/.venv/
-brand/tools/node_modules/
-docs/reference/
-.playwright-mcp/
 __pycache__/
-.vercel
-.env*
-# Neon agent docs installed by the Vercel integration; local tooling, not project code.
-.agents/
-.claude/skills/
-skills-lock.json
+brand/.venv/
+
+# OS
+.DS_Store
+
+# Local working files: plans, explorations, references. Never committed.
+workbench/

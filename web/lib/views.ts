@@ -95,7 +95,7 @@ export async function treasuryView(): Promise<{ party: string; label: string; ba
   return { party, label: label(party), balance: amuletBalance(holdings).toFixed(10) }
 }
 
-// Read as the customer's own address party, so the ledger, not this code, decides what is visible (SC-004).
+// Read as the customer's own address party, so the ledger, not this code, decides what is visible.
 export async function receiptViews(customer: Customer): Promise<ReceiptView[]> {
   const receipts: CreatedEvent[] = await activeContracts(customer.party, ':Naust:DepositReceipt')
   return receipts

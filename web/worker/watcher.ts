@@ -1,6 +1,4 @@
-// The deposit watcher: calls the same tick the deployed app uses, every NAUST_POLL_MS.
-// Run with `npm run watch` from web/. In production it runs on Render as a free web service: when PORT is set it
-// also serves GET /healthz, which UptimeRobot calls every few minutes to keep the free instance from sleeping.
+// Runs the deposit tick every NAUST_POLL_MS. When PORT is set, also serves GET /healthz.
 import { createServer } from 'node:http'
 import { env } from '../lib/env.ts'
 import { closeDb } from '../lib/db.ts'

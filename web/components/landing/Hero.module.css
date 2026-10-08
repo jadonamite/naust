@@ -1,4 +1,4 @@
-/* The hero sits in a rounded frame 12px inside the viewport, as in the reference. */
+/* The hero sits in a rounded frame 12px inside the viewport. */
 .frame {
   padding: var(--frame-inset);
   padding-top: calc(var(--frame-inset) + env(safe-area-inset-top));

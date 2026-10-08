@@ -1,14 +1,7 @@
 {
-  "name": "tools",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "naust-brand-tools",
+  "private": true,
+  "description": "Outlines the Naust wordmark and exports the logo PNGs.",
   "type": "commonjs",
   "dependencies": {
     "opentype.js": "^2.0.0",

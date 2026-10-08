@@ -4,7 +4,7 @@ import Naust
 import Daml.Script
 import DA.Assert
 
--- SC-004: a customer address sees its own receipts and nothing of another customer's.
+-- A customer address sees its own receipts and nothing of another customer's.
 visibility : Script ()
 visibility = script do
   business <- allocatePartyByHint (PartyIdHint "Business")

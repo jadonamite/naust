@@ -1,7 +1,7 @@
-// Demo sender: a plain token-standard transfer with no memo, standing in for an exchange withdrawal.
-// Usage: node worker/send-deposit.ts <customer-ref> <amount>          send from the Exchange party
-//        node worker/send-deposit.ts --fund <amount>                  move CC from the treasury wallet to Exchange
-// Exchange is a Console-created party (86bb3d93-Exchange). Without it, sends come from the treasury wallet.
+// Sends a test deposit: a plain token-standard transfer with no memo, as an exchange withdrawal would be.
+// Usage: node worker/send-deposit.ts <customer-ref> <amount>   send from the Exchange party
+//        node worker/send-deposit.ts --fund <amount>           move CC from the treasury wallet to Exchange
+// Falls back to the treasury wallet when no Exchange party exists.
 import { env } from '../lib/env.ts'
 import { ledgerUserId } from '../lib/auth.ts'
 import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, call, treasuryParty } from '../lib/ledger.ts'

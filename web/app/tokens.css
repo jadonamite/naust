@@ -1,6 +1,5 @@
 /*
   Naust design foundations. Rationale and sources: docs/design-foundations.md.
-  Structure and rhythm follow the dashx.xyz reference; numbers for type, targets and motion follow the HIG web port.
   Use these tokens only. No arbitrary values.
 */
 @import '../components/brand/tokens.css';
@@ -10,7 +9,7 @@
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-serif: var(--font-newsreader), 'Times New Roman', ui-serif, serif;
 
-  /* Type scale, by role. Display sizes are the reference's; interface sizes are the HIG's. */
+  /* Type scale, by role. */
   --text-hero: clamp(2.25rem, 1.2rem + 2.9vw, 3.25rem);   /* 36 to 52, hero headline (sans) */
   --text-display: clamp(2.25rem, 1.6rem + 1.8vw, 3.125rem); /* 36 to 50, page title (serif) */
   --text-title-1: clamp(1.75rem, 1.4rem + 1vw, 2.375rem);  /* 28 to 38, section heading (serif) */
@@ -29,12 +28,12 @@
   --leading-ui: 1.25;      /* labels, buttons, rows */
   --leading-read: 1.55;    /* running text */
 
-  --tracking-display: -0.05em; /* serif display, matches the reference's -2.5px at 50px */
+  --tracking-display: -0.05em;
   --tracking-title: -0.04em;
   --tracking-ui: -0.01em;
   --tracking-eyebrow: 0;
 
-  /* Spacing: 4px base, 8px rhythm (HIG web port). */
+  /* Spacing: 4px base, 8px rhythm. */
   --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
   --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
   --space-12: 3rem; --space-16: 4rem; --space-20: 5rem; --space-24: 6rem; --space-30: 7.5rem;

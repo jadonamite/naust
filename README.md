@@ -67,48 +67,35 @@ These are the numbers behind the landing page, measured on the shared HackCanton
 |---|---|
 | Time to match (`worker/test-timing.ts`, 10 deposits) | median 2.2 s, max 4.6 s |
 | Time to sweep into treasury (same run) | median 31.5 s |
-| Crash safety (`worker/test-restart.ts`) | watcher killed 4 times mid-deposit across 3 deposits; each receipted exactly once, every address emptied, treasury changed by exactly the amount sent. 12 of 12 checks pass, last run 8 October 2026 on Postgres. |
+| Crash safety (`worker/test-restart.ts`) | watcher killed 4 times mid-deposit across 3 deposits; each receipted exactly once, every address emptied, treasury changed by exactly the amount sent. 12 of 12 checks pass. |
 | Privacy (`worker/test-visibility.ts`) | each customer's address sees all of its own receipts and none of anyone else's. 10 of 10 checks pass. |
-| Live deployment, no watcher process | a 0.5 CC deposit to Ada went from seen to swept in about 44 s, driven only by the operator screen's polling (8 October 2026). |
 
 ## Where it runs
 
 ```
-browser ──► naust.namite.xyz (Vercel, Next.js 16)
+browser ──► naust.namite.xyz (Next.js 16 on Vercel)
               │  pages, /api/ui/* (read), /api/tick (work)
-              ├──► Neon Postgres (customers, deposits, the tick lease)
+              ├──► Postgres (customers, deposits, the tick lease)
               └──► Canton DevNet (JSON Ledger API, validator API)
 ```
 
-The app lives in `web/`. Vercel builds it on every push to `main`. A push to any other branch gets
-its own preview address.
+The deposit work is one "tick": check every customer address, record new transfers, and move every
+unfinished deposit as far as it will go (`web/lib/tick.ts`). Four things start a tick:
 
-Vercel runs code as short-lived functions, not as a long-running process, so there is no loop
-watching the ledger. The deposit work is one "tick": check every customer address, record new
-transfers, and move every unfinished deposit as far as it will go (`web/lib/tick.ts`). Three things
-start a tick:
+- **The watcher** (`web/worker/watcher.ts`), an always-on process that ticks every 3 seconds. It
+  serves `/healthz`, which fails if no tick has finished in 2 minutes. `render.yaml` deploys it.
+- **The demo screens.** Each poll of the API offers to run a tick after its response is sent.
+- **GitHub Actions**, every 5 minutes (`.github/workflows/tick.yml`).
+- **Vercel Cron**, daily (`web/vercel.json`).
 
-- **Anyone viewing the demo.** The operator and customer screens poll the API every 2 seconds, and
-  each poll offers to run a tick after its response is sent.
-- **GitHub Actions**, every 5 minutes (`.github/workflows/tick.yml`), by calling
-  `/api/tick` with a secret.
-- **Vercel Cron**, once a day (`web/vercel.json`), as a last resort. The Hobby plan allows no more.
-
-A tick runs only while it holds a lease, a single row in Postgres that says who is working and until
-when. Two ticks never run at once, even when several function copies or a local watcher start
-together. A tick that dies loses the lease after 55 seconds.
-
-A fourth runs all the time: **the watcher** (`web/worker/watcher.ts`) on a free Render web service
-(`render.yaml`), ticking every 3 seconds whether or not anyone is watching. Render's free plan sleeps
-a service after 15 minutes without web traffic, so UptimeRobot calls the watcher's `/healthz` page
-every 5 minutes to keep it awake. `/healthz` answers 503 if no tick has finished in 2 minutes, so
-UptimeRobot's alert also fires when the watcher is stuck, not only when it is down. The other three
-triggers remain as backups.
+The last three are backups. A tick runs only while it holds a lease, a single row in Postgres that
+says who is working and until when, so two ticks never run at once. A tick that dies loses the lease
+after 55 seconds.
 
 ## Running it locally
 
-You need Node.js 24 or later (the code uses `node:sqlite` in one migration script and runs
-TypeScript files directly) and the Daml SDK 3.5.12 if you want to rebuild the contracts.
+You need Node.js 24 or later, which runs the TypeScript scripts directly, and the Daml SDK 3.5.12
+to rebuild the contracts.
 
 ```bash
 cp .env.example .env      # then fill in the values, see below
@@ -118,24 +105,23 @@ npm run dev               # the app, on http://localhost:3000
 npm run watch             # the watcher loop, in a second terminal
 ```
 
-The watcher calls the same tick as the deployed app, every 3 seconds. Point `DATABASE_URL` at the same
-database as the deployed app and the two share one lease, so they never process the same deposit at
-the same time.
+The watcher calls the same tick as the deployed app. Pointed at the same database, the two share one
+lease and never process the same deposit at the same time.
 
 ### Environment variables
 
-All of them live in the repository-root `.env`, which git ignores. `.env.example` lists them.
+They live in the repository-root `.env`, which git ignores. `.env.example` lists them.
 
 | Variable | What it is |
 |---|---|
 | `KEYCLOAK_TOKEN_URL`, `KEYCLOAK_CLIENT_ID` | where the app gets its ledger access token |
 | `HACKCANTON_USERNAME`, `HACKCANTON_PASSWORD` | the DevNet node login |
-| `JSON_API`, `GRPC_API`, `VALIDATOR_API` | the DevNet node's endpoints |
-| `DATABASE_URL` | Postgres connection string. On Vercel the Neon integration sets it. |
-| `CRON_SECRET` | guards `/api/tick`. The same value is stored in Vercel and as a GitHub Actions secret. |
+| `JSON_API`, `VALIDATOR_API` | the ledger node's endpoints |
+| `DATABASE_URL` | Postgres connection string |
+| `CRON_SECRET` | guards `/api/tick`; also stored as a GitHub Actions secret |
 | `NAUST_POOL` | the customer address pool, default `Ada,Ben,Tokunbo` |
 | `NAUST_POLL_MS` | the watcher's interval, default 3000 |
-| `PORT` | when set, the watcher serves `/healthz` on it (Render sets it) |
+| `PORT` | when set, the watcher serves `/healthz` on it |
 | `NEXT_PUBLIC_SITE_URL` | the public address, used for link previews |
 | `NEXT_PUBLIC_NAUST_BUSINESS` | the business name addresses are shown under, ENS-style (`MagnaXchange-Ada`). Default `MagnaXchange`. |
 
@@ -151,14 +137,6 @@ Run from `web/`.
 | `node worker/test-timing.ts` | sends 10 deposits and measures time to match and to sweep |
 | `node worker/test-restart.ts` | the crash-safety test above |
 | `node worker/test-visibility.ts` | the privacy test above |
-| `node worker/migrate-sqlite.ts` | one-off copy of an old SQLite `naust.db` into Postgres |
-
-### Running the watcher always on
-
-`npm run watch` is a plain Node process. With `PORT` set it also serves `/healthz`. `render.yaml`
-deploys it to Render as a free web service: in the Render dashboard choose New, then Blueprint, pick
-this repository, and enter the secret variables when asked (the same values as in `.env`). Then add
-an HTTP monitor in UptimeRobot for `https://<service>.onrender.com/healthz` at a 5-minute interval.
 
 Where Naust goes from here is in [ROADMAP.md](ROADMAP.md), with the engineering detail in
 [docs/engineering-roadmap.md](docs/engineering-roadmap.md).
@@ -182,6 +160,5 @@ Where Naust goes from here is in [ROADMAP.md](ROADMAP.md), with the engineering 
 | `web/` | the Next.js app, the tick, the watcher and the test scripts |
 | `web/lib/` | ledger client, token-standard calls, deposit state machine, database |
 | `daml/` | the Daml contracts (`main/`) and their tests (`test/`) |
-| `brand/` | logo and identity work |
-| `scripts/` | asset generation for the landing page, and the early sweep spike |
-| `docs/` | design foundations, design review, demo script |
+| `brand/` | the logo, its generator and brand guidelines |
+| `docs/` | design foundations and the engineering roadmap |

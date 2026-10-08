@@ -1,7 +1,7 @@
 import { env } from './env.ts'
 import { call, submit, type CreatedEvent, type DisclosedContract, type Transaction } from './ledger.ts'
 
-// Token-standard registry calls through the validator's scan proxy. Request shapes verified on DevNet (T009).
+// Token-standard registry calls through the validator's scan proxy.
 const REG = () => env.validatorApi + '/scan-proxy/registry/transfer-instruction/v1'
 const IFACE = '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1'
 const EMPTY = { values: {} }

@@ -1,6 +1,5 @@
-# Runs one deposit tick on the live site every 5 minutes, so a deposit sent while nobody has the demo open is
-# still credited and swept. GitHub runs schedules on a best-effort basis; gaps of 10 to 15 minutes are normal.
-# Needs the repository secret CRON_SECRET, the same value as the Vercel project's CRON_SECRET.
+# Backstop trigger: runs one deposit tick every 5 minutes (GitHub schedules are best-effort).
+# Requires the repository secret CRON_SECRET, matching the Vercel project's value.
 name: Deposit tick
 
 on:

@@ -5,7 +5,7 @@ import { ArrowUpRight } from '@phosphor-icons/react/dist/ssr'
 import { HeroVideo } from './HeroVideo'
 import styles from './Hero.module.css'
 
-// Generated assets (assets.md) appear as soon as their files exist in public/.
+// Optional media: each piece renders only if its file exists in public/.
 const has = (p: string) => existsSync(join(/*turbopackIgnore: true*/ process.cwd(), 'public', p))
 
 export function Hero() {

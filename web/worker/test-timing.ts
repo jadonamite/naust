@@ -1,4 +1,4 @@
-// SC-002: time from ledger commit to "matched" (attributed to a customer) and to "swept", over 10 deposits.
+// Time from ledger commit to "matched" (attributed to a customer) and to "swept", over 10 deposits.
 // The send call returns after the transfer commits, so its return time stands in for the commit time.
 import { spawn, execFileSync } from 'node:child_process'
 import { listDeposits } from '../lib/deposits.ts'

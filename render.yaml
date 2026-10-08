@@ -1,6 +1,5 @@
-# The always-on deposit watcher. A free Render web service (free background workers do not exist), kept awake
-# by UptimeRobot calling /healthz every 5 minutes. It shares the Neon database and the tick lease with the
-# Vercel app, so the two never process the same deposit at once. Secrets are entered in the Render dashboard.
+# Always-on deposit watcher. Shares the database and tick lease with the web app.
+# Secrets (sync: false) are entered in the Render dashboard.
 services:
   - type: web
     name: naust-watcher
@@ -30,8 +29,6 @@ services:
       - key: HACKCANTON_PASSWORD
         sync: false
       - key: JSON_API
-        sync: false
-      - key: GRPC_API
         sync: false
       - key: VALIDATOR_API
         sync: false

@@ -1,4 +1,4 @@
-"""Concept 2 (lifted cell): black and off-white, the raised cube's sides in Falu red. Name from tools/word.json."""
+"""The Naust logo: black and off-white, the raised cube's sides in Falu red. Name from tools/word.json."""
 import json, os, re
 from iso import render, box
 
@@ -6,7 +6,6 @@ HERE = os.path.dirname(__file__)
 BLACK, PAPER, RED = '#000000', '#F1F1EE', '#A63A24'
 GAP, RADIUS = 0.4, 0.8
 WORD = json.load(open(os.path.join(HERE, '..', 'tools', 'word.json')))
-NAME = '2-lifted-cell'
 
 def objects(ink):
     lifted = box(1.08, 1.08, 0.55, 1, 1, 1)

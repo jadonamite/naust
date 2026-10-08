@@ -1,4 +1,4 @@
-// SC-004 on DevNet: each customer address sees only its own receipts; the business sees all of them.
+// Each customer address sees only its own receipts; the business sees all of them.
 import { activeContracts, treasuryParty } from '../lib/ledger.ts'
 import { listCustomers } from '../lib/customers.ts'
 import { listDeposits } from '../lib/deposits.ts'

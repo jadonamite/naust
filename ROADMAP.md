@@ -30,7 +30,6 @@ own token standard.
   stopped mid-payment.
 - **Private.** Each customer sees their own receipts and nobody else's. The ledger itself enforces it.
 - **Always on.** Deposits are processed around the clock, whether or not anyone is watching.
-- **Validated.** The operators who described the problem have seen Naust working.
 
 ## The road ahead
 

@@ -6,8 +6,7 @@ import { tick } from '@/lib/tick.ts'
 export class NotFound extends Error {}
 
 // Ledger failures surface as 502 so the screens can tell "ledger unreachable" from "not found".
-// Every screen poll also offers to run a deposit tick once the response is sent; the lease in lib/tick.ts
-// lets at most one run at a time, so a watched demo processes deposits within seconds.
+// Every screen poll also offers to run a deposit tick after responding; the lease in lib/tick.ts keeps it to one at a time.
 export async function respond(fn: () => unknown): Promise<Response> {
   after(() => tick().catch((e) => console.error('tick failed:', (e as Error).message)))
   try {

@@ -26,8 +26,7 @@ export type Deposit = {
   updated_at: string
 }
 
-// Each entry runs once, in order; schema_version records how many have run.
-// Timestamps stay ISO-8601 text, as they were in SQLite, so ordering and comparisons are unchanged.
+// Each entry runs once, in order; schema_version records how many have run. Timestamps are ISO-8601 text.
 const migrations = [
   `CREATE TABLE customers (
      id TEXT PRIMARY KEY,

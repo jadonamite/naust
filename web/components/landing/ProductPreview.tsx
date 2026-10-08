@@ -63,8 +63,7 @@ const SNAPSHOT = {
 }
 
 const DESIGN_WIDTH = 1280
-// Below this width the operator app has its own phone layout (app.module.css, 44rem), so the preview shows that
-// at full size instead of shrinking the desktop screen until nothing is readable.
+// Below this width (app.module.css, 44rem) the preview shows the app's phone layout at full size.
 const PHONE_MAX = 704
 
 export function ProductPreview() {
