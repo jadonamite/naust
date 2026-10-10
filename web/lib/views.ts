@@ -3,6 +3,7 @@ import { listCustomers } from './customers.ts'
 import { listDeposits } from './deposits.ts'
 import { AMULET, activeContracts, amuletBalance, treasuryParty, type CreatedEvent } from './ledger.ts'
 import { partyName, senderName } from './party.ts'
+import { sumDecimals } from './decimal.ts'
 
 // JSON shapes the screens read. Party IDs stay whole; `label` is the readable name (see lib/party.ts).
 export const label = partyName
@@ -28,7 +29,7 @@ export type DepositView = {
   sender: string
   senderLabel: string
   state: Deposit['state']
-  error: string | null
+  reason: string | null
   seenAt: string
   updatedAt: string
   acceptUpdateId: string | null
@@ -48,7 +49,13 @@ export type ReceiptView = {
   sweepUpdateId: string | null
 }
 
-const sum = (xs: string[]) => xs.reduce((s, x) => s + Number(x), 0).toFixed(10)
+// Ledger errors carry the request URL and raw response; the screens show only what went wrong.
+export function errorReason(error: string | null): string | null {
+  if (!error) return null
+  const ledger = /^Ledger (\d{3}) /.exec(error)
+  if (ledger) return ledger[1] === '429' ? 'The ledger is busy.' : `The ledger refused a step (HTTP ${ledger[1]}).`
+  return error.charAt(0).toUpperCase() + error.slice(1) + (/[.!?]$/.test(error) ? '' : '.')
+}
 
 export async function customerViews(): Promise<CustomerView[]> {
   const [deposits, customers] = await Promise.all([listDeposits(), listCustomers()])
@@ -62,7 +69,7 @@ export async function customerViews(): Promise<CustomerView[]> {
       accountCid: c.account_cid,
       createdAt: c.created_at,
       deposits: own.length,
-      received: sum(own.filter((d) => d.state === 'swept').map((d) => d.amount)),
+      received: sumDecimals(own.filter((d) => d.state === 'swept').map((d) => d.amount)),
       lastDepositAt: own[0]?.seen_at ?? null,
     }
   })
@@ -80,7 +87,7 @@ export async function depositViews(customerId?: string): Promise<DepositView[]> 
     sender: d.sender,
     senderLabel: senderName(d.sender),
     state: d.state,
-    error: d.error,
+    reason: errorReason(d.error),
     seenAt: d.seen_at,
     updatedAt: d.updated_at,
     acceptUpdateId: d.accept_update_id,
@@ -92,7 +99,7 @@ export async function depositViews(customerId?: string): Promise<DepositView[]> 
 export async function treasuryView(): Promise<{ party: string; label: string; balance: string }> {
   const party = await treasuryParty()
   const holdings = (await activeContracts(party, AMULET)).filter((c) => c.createArgument.owner === party)
-  return { party, label: label(party), balance: amuletBalance(holdings).toFixed(10) }
+  return { party, label: label(party), balance: amuletBalance(holdings) }
 }
 
 // Read as the customer's own address party, so the ledger, not this code, decides what is visible.

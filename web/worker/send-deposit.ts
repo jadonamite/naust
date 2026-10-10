@@ -8,6 +8,7 @@ import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, call, tre
 import { acceptInstruction, transfer } from '../lib/registry.ts'
 import { listCustomers } from '../lib/customers.ts'
 import { closeDb } from '../lib/db.ts'
+import { compareDecimals } from '../lib/decimal.ts'
 
 const [first, second] = process.argv.slice(2)
 const treasury = await treasuryParty()
@@ -49,7 +50,7 @@ if (first === '--fund') {
   const customer = (await listCustomers()).find((c) => c.ref === first)
   if (!customer || !second) throw new Error('usage: send-deposit.ts <customer-ref> <amount> | --fund <amount>')
   const holdings = await exchangeHoldings()
-  if (holdings?.length && amuletBalance(holdings) >= Number(second)) {
+  if (holdings?.length && compareDecimals(amuletBalance(holdings), second) >= 0) {
     const { tx } = await transfer({ sender: exchange, receiver: customer.party, holdings, amount: second })
     const instr = tx.events.map((e: any) => e.CreatedEvent).find((e: any) => e?.templateId.endsWith(TRANSFER_INSTRUCTION))
     console.log('Exchange sent', second, 'CC to', customer.ref, 'instr', instr?.contractId.slice(0, 12))

@@ -33,7 +33,7 @@ const deposit = (id: string, ref: string, amount: string, sender: string, seenAt
   sender,
   senderLabel: senderName(sender),
   state: 'swept',
-  error: null,
+  reason: null,
   seenAt,
   updatedAt: seenAt,
   acceptUpdateId: null,

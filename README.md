@@ -46,6 +46,11 @@ When a transfer lands on a customer's address, Naust takes it through five state
 Each step checks the ledger before it acts, and every command carries an ID derived from the
 deposit. A step that crashes halfway is picked up where it stopped, never repeated, never skipped.
 
+When the ledger is busy or unreachable, Naust waits and tries again, leaving a longer gap each time,
+up to ten minutes. An outage never fails a deposit. A step the ledger keeps refusing fails after
+five tries, and the operator screen shows why, with a Retry button that resumes the deposit from
+the step it reached.
+
 Receipts are signed by the business and observed by the customer's address. The ledger shows a
 receipt only to those two parties, so one customer cannot see another's deposits. That rule lives
 in the Daml contract, not in a filter in our code.
@@ -131,6 +136,7 @@ Run from `web/`.
 
 | Command | What it does |
 |---|---|
+| `npm test` | unit tests; with `DATABASE_URL` pointing at a database whose name contains `test`, also the database tests (they wipe that database) |
 | `npm run smoke` | read-only check: ledger login, treasury balance, each address, database tables |
 | `npm run seed -- Ada Ben Tokunbo` | creates a customer per pool address, with its `CustomerAccount` on the ledger |
 | `node worker/send-deposit.ts Ada 0.5` | sends a real test deposit to a customer |

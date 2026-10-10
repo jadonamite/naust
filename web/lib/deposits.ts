@@ -3,6 +3,7 @@ import { db, type Customer, type Deposit } from './db.ts'
 import {
   AMULET,
   TRANSFER_INSTRUCTION,
+  LedgerError,
   activeContracts,
   createdIn,
   findArchivingTransaction,
@@ -15,10 +16,22 @@ import { acceptInstruction, transfer } from './registry.ts'
 // seen -> accepted -> receipted -> sweeping -> swept | failed, keyed by the incoming instruction's contract ID.
 // Every step checks the ledger before acting, so a restart at any point neither repeats nor skips a step.
 export const DEPOSIT_RECEIPT = '#naust:Naust:DepositReceipt'
+// A step the ledger keeps refusing fails after this many tries. Outages and overload never fail a deposit.
 const MAX_ATTEMPTS = 5
+const RETRY_BASE_MS = 5_000
+const RETRY_MAX_MS = 600_000
 
 // A problem retrying will not fix.
 export class DepositFailure extends Error {}
+
+// Ledger overload (429), ledger outages (5xx) and network errors pass on their own.
+export function isTransient(e: unknown): boolean {
+  if (e instanceof DepositFailure) return false
+  if (e instanceof LedgerError) return e.retryable
+  return true
+}
+
+export const retryDelayMs = (attempts: number) => Math.min(RETRY_BASE_MS * 2 ** (attempts - 1), RETRY_MAX_MS)
 
 const hashId = (prefix: string, cid: string) => `naust-${prefix}-${createHash('sha256').update(cid).digest('hex').slice(0, 32)}`
 const now = () => new Date().toISOString()
@@ -34,6 +47,10 @@ async function get(cid: string): Promise<Deposit> {
   return d
 }
 
+export async function depositById(cid: string): Promise<Deposit | undefined> {
+  return get(cid)
+}
+
 export async function listDeposits(customerId?: string): Promise<Deposit[]> {
   const sql = await db()
   return customerId
@@ -43,7 +60,10 @@ export async function listDeposits(customerId?: string): Promise<Deposit[]> {
 
 export async function unfinishedDeposits(): Promise<Deposit[]> {
   const sql = await db()
-  return await sql<Deposit[]>`SELECT * FROM deposits WHERE state NOT IN ('swept', 'failed') ORDER BY seen_at`
+  return await sql<Deposit[]>`
+    SELECT * FROM deposits
+    WHERE state NOT IN ('swept', 'failed') AND (next_attempt_at IS NULL OR next_attempt_at <= now())
+    ORDER BY seen_at`
 }
 
 // Record an incoming instruction once. Returns true if it was new.
@@ -180,12 +200,14 @@ async function recordSweep(d: Deposit, business: string): Promise<void> {
     })
     receiptCid = createdIn(tx).find((e) => e.templateId.endsWith(':Naust:DepositReceipt'))!.contractId
   }
-  await patch(d.instruction_cid, { state: 'swept', receipt_cid: receiptCid, error: null })
+  await patch(d.instruction_cid, { state: 'swept', receipt_cid: receiptCid, error: null, next_attempt_at: null })
 }
 
-// Drive one deposit as far as it will go. Errors are recorded; transient ones retry on the next poll.
+// Drive one deposit as far as it will go. Errors are recorded and retried with growing gaps; the count restarts
+// whenever the deposit gets a step further.
 export async function advance(cid: string, customer: Customer): Promise<Deposit> {
   const treasury = await treasuryParty()
+  const startState = (await get(cid)).state
   try {
     let d = await get(cid)
     if (d.state === 'seen') await accept(d, customer), (d = await get(cid))
@@ -195,10 +217,35 @@ export async function advance(cid: string, customer: Customer): Promise<Deposit>
       await recordSweep(d, treasury)
     }
   } catch (e) {
-    const d = await get(cid)
-    const attempts = d.attempts + 1
-    const fatal = e instanceof DepositFailure || attempts >= MAX_ATTEMPTS
-    await patch(cid, { attempts, error: (e as Error).message.slice(0, 500), ...(fatal ? { state: 'failed' as const } : {}) })
+    await patch(cid, afterError(await get(cid), startState, e))
   }
+  return await get(cid)
+}
+
+// What to record after a failed step: the error, when to try again, or that the deposit has failed for good.
+export function afterError(d: Deposit, startState: Deposit['state'], e: unknown, now = Date.now()): Partial<Deposit> {
+  const attempts = (d.state === startState ? d.attempts : 0) + 1
+  const fatal = e instanceof DepositFailure || (!isTransient(e) && attempts >= MAX_ATTEMPTS)
+  return {
+    attempts,
+    error: (e as Error).message.slice(0, 500),
+    next_attempt_at: fatal ? null : new Date(now + retryDelayMs(attempts)),
+    ...(fatal ? { state: 'failed' as const } : {}),
+  }
+}
+
+// The step a failed deposit had reached, worked out from what it recorded.
+export function resumeState(d: Deposit): Deposit['state'] {
+  if (d.sweep_instruction_cid || d.sweep_update_id) return 'sweeping'
+  if (d.receipt_cid) return 'receipted'
+  if (d.accept_update_id) return 'accepted'
+  return 'seen'
+}
+
+// Put a failed deposit back at the step it reached. Every step checks the ledger first, so a retry cannot repeat work.
+export async function retryDeposit(cid: string): Promise<Deposit | undefined> {
+  const d = await get(cid)
+  if (!d || d.state !== 'failed') return d
+  await patch(cid, { state: resumeState(d), attempts: 0, error: null, next_attempt_at: null })
   return await get(cid)
 }

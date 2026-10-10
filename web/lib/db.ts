@@ -22,12 +22,13 @@ export type Deposit = {
   seen_offset: number
   error: string | null
   attempts: number
+  next_attempt_at: Date | null
   seen_at: string
   updated_at: string
 }
 
 // Each entry runs once, in order; schema_version records how many have run. Timestamps are ISO-8601 text.
-const migrations = [
+export const migrations = [
   `CREATE TABLE customers (
      id TEXT PRIMARY KEY,
      party TEXT NOT NULL UNIQUE,
@@ -61,6 +62,9 @@ const migrations = [
      holder TEXT NOT NULL,
      until TIMESTAMPTZ NOT NULL
    );`,
+  // Amounts become exact decimals; next_attempt_at spaces out retries after an error.
+  `ALTER TABLE deposits ALTER COLUMN amount TYPE NUMERIC(38,10) USING amount::numeric;
+   ALTER TABLE deposits ADD COLUMN next_attempt_at TIMESTAMPTZ;`,
 ]
 
 export type Sql = postgres.Sql<{ bigint: number }>

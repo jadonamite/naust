@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { env } from './env.ts'
 import { accessToken, invalidateToken, ledgerUserId } from './auth.ts'
+import { sumDecimals } from './decimal.ts'
 
 // JSON Ledger API v2 client.
 export class LedgerError extends Error {
@@ -109,10 +110,8 @@ export function treasuryParty(): Promise<string> {
 export const AMULET = ':Splice.Amulet:Amulet'
 export const TRANSFER_INSTRUCTION = 'AmuletTransferInstruction:AmuletTransferInstruction'
 
-export function amuletBalance(contracts: CreatedEvent[]): number {
-  return contracts
-    .filter((c) => c.templateId.endsWith(AMULET))
-    .reduce((sum, c) => sum + Number(c.createArgument.amount.initialAmount), 0)
+export function amuletBalance(contracts: CreatedEvent[]): string {
+  return sumDecimals(contracts.filter((c) => c.templateId.endsWith(AMULET)).map((c) => c.createArgument.amount.initialAmount))
 }
 
 const wildcard = (party: string) => ({

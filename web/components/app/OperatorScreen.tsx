@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { CustomerView, DepositView } from '@/lib/views.ts'
 import { CopyButton } from './CopyButton'
+import { RetryButton } from './RetryButton'
 import { StatePill } from './StatePill'
 import { amount, clock, usePoll } from './usePoll'
 import { partyName } from '@/lib/party.ts'
@@ -137,8 +138,18 @@ export function OperatorView({
                 <span className={styles.feedMain}>
                   <strong>{amount(d.amount)} CC</strong> for <strong>{d.customerRef}</strong>
                   <span className={styles.feedFrom}>from {d.senderLabel}, no memo</span>
+                  {d.reason && (
+                    <span className={d.state === 'failed' ? styles.feedFailed : styles.feedFrom}>
+                      {d.state === 'failed' ? d.reason : `${d.reason} Trying again shortly.`}
+                    </span>
+                  )}
                 </span>
-                <StatePill state={d.state} />
+                <span className={styles.feedState}>
+                  <StatePill state={d.state} />
+                  {d.state === 'failed' && (
+                    <RetryButton id={d.id} label={`Retry ${amount(d.amount)} CC deposit for ${d.customerRef}`} />
+                  )}
+                </span>
               </li>
             ))}
           </ol>

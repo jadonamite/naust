@@ -9,7 +9,8 @@
     "start": "next start",
     "smoke": "node --disable-warning=ExperimentalWarning worker/smoke.ts",
     "watch": "node --disable-warning=ExperimentalWarning worker/watcher.ts",
-    "seed": "node --disable-warning=ExperimentalWarning worker/seed.ts"
+    "seed": "node --disable-warning=ExperimentalWarning worker/seed.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test 'test/*.test.ts'"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

@@ -12,7 +12,7 @@ const node = ['--disable-warning=ExperimentalWarning']
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const treasury = await treasuryParty()
-const balance = async () => amuletBalance((await activeContracts(treasury, AMULET)).filter((c) => c.createArgument.owner === treasury))
+const balance = async () => Number(amuletBalance((await activeContracts(treasury, AMULET)).filter((c) => c.createArgument.owner === treasury)))
 const before = await balance()
 const known = new Set((await listDeposits()).map((d) => d.instruction_cid))
 
@@ -65,7 +65,7 @@ for (const d of deposits) {
 }
 for (const c of await listCustomers()) {
   const acs = await activeContracts(c.party)
-  check(amuletBalance(acs.filter((x) => x.createArgument.owner === c.party)) === 0, `${c.ref} address holds nothing`)
+  check(Number(amuletBalance(acs.filter((x) => x.createArgument.owner === c.party))) === 0, `${c.ref} address holds nothing`)
   check(!acs.some((x) => x.templateId.endsWith(TRANSFER_INSTRUCTION)), `${c.ref} has no pending transfers`)
 }
 const delta = (await balance()) - before
