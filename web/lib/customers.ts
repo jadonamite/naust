@@ -13,9 +13,12 @@ export async function poolParties(): Promise<string[]> {
   return POOL_NAMES.map((name) => `${prefix}-${name}::${ns}`)
 }
 
-export async function listCustomers(): Promise<Customer[]> {
+// Every business's customers when no business is given (the tick watches them all).
+export async function listCustomers(businessId?: string): Promise<Customer[]> {
   const sql = await db()
-  return await sql<Customer[]>`SELECT * FROM customers ORDER BY created_at`
+  return businessId
+    ? await sql<Customer[]>`SELECT * FROM customers WHERE business_id = ${businessId} ORDER BY created_at`
+    : await sql<Customer[]>`SELECT * FROM customers ORDER BY created_at`
 }
 
 export async function customerById(id: string): Promise<Customer | undefined> {
@@ -24,10 +27,12 @@ export async function customerById(id: string): Promise<Customer | undefined> {
   return c
 }
 
-// Accepts either the customer ID or the business's own reference (used in readable links like /customer/Ada).
-export async function findCustomer(idOrRef: string): Promise<Customer | undefined> {
+// A customer of one business, by ID or by the business's own reference (readable links like /customer/Ada).
+export async function findCustomer(businessId: string, idOrRef: string): Promise<Customer | undefined> {
   const sql = await db()
-  const [c] = await sql<Customer[]>`SELECT * FROM customers WHERE id = ${idOrRef} OR ref = ${idOrRef} ORDER BY (id = ${idOrRef}) DESC LIMIT 1`
+  const [c] = await sql<Customer[]>`
+    SELECT * FROM customers WHERE business_id = ${businessId} AND (id = ${idOrRef} OR ref = ${idOrRef})
+    ORDER BY (id = ${idOrRef}) DESC LIMIT 1`
   return c
 }
 
@@ -41,17 +46,21 @@ export class PoolExhaustedError extends Error {}
 export class DuplicateRefError extends Error {}
 
 // Reserve the next free pool address in Postgres, then create the CustomerAccount on the ledger.
-export async function createCustomer(ref: string): Promise<Customer> {
+export async function createCustomer(businessId: string, ref: string): Promise<Customer> {
   ref = ref.trim()
   if (!ref) throw new Error('customer reference is required')
   const sql = await db()
-  if ((await sql`SELECT 1 FROM customers WHERE ref = ${ref}`).length) throw new DuplicateRefError(`reference ${ref} exists`)
+  if ((await sql`SELECT 1 FROM customers WHERE business_id = ${businessId} AND ref = ${ref}`).length) {
+    throw new DuplicateRefError(`reference ${ref} exists`)
+  }
   const taken = new Set((await listCustomers()).map((c) => c.party))
   const party = (await poolParties()).find((p) => !taken.has(p))
   if (!party) throw new PoolExhaustedError('no free deposit address left in the pool')
 
   const id = 'cus_' + randomUUID().replaceAll('-', '').slice(0, 16)
-  await sql`INSERT INTO customers (id, party, ref, account_cid, created_at) VALUES (${id}, ${party}, ${ref}, NULL, ${new Date().toISOString()})`
+  await sql`
+    INSERT INTO customers (id, business_id, party, ref, account_cid, created_at)
+    VALUES (${id}, ${businessId}, ${party}, ${ref}, NULL, ${new Date().toISOString()})`
   await ensureAccount((await customerById(id))!)
   return (await customerById(id))!
 }

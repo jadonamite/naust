@@ -4,6 +4,9 @@ import { spawn, execFileSync, type ChildProcess } from 'node:child_process'
 import { AMULET, TRANSFER_INSTRUCTION, activeContracts, amuletBalance, treasuryParty } from '../lib/ledger.ts'
 import { listCustomers } from '../lib/customers.ts'
 import { listDeposits } from '../lib/deposits.ts'
+import { demoBusiness } from '../lib/businesses.ts'
+
+const demo = await demoBusiness()
 
 const KILL_AFTER_MS = [4_000, 9_000, 15_000, 22_000]
 const FINISH_TIMEOUT_MS = 180_000
@@ -14,7 +17,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const treasury = await treasuryParty()
 const balance = async () => Number(amuletBalance((await activeContracts(treasury, AMULET)).filter((c) => c.createArgument.owner === treasury)))
 const before = await balance()
-const known = new Set((await listDeposits()).map((d) => d.instruction_cid))
+const known = new Set((await listDeposits(demo.id)).map((d) => d.instruction_cid))
 
 // Sent from the funded Exchange party, the treasury gains each amount once; sent from the treasury wallet, it nets zero.
 let expected = 0
@@ -43,7 +46,7 @@ for (const at of KILL_AFTER_MS) {
   start()
 }
 
-const ours = async () => (await listDeposits()).filter((d) => !known.has(d.instruction_cid))
+const ours = async () => (await listDeposits(demo.id)).filter((d) => !known.has(d.instruction_cid))
 const done = (ds: Awaited<ReturnType<typeof ours>>) => ds.length === sends.length && ds.every((d) => d.state === 'swept' || d.state === 'failed')
 const deadline = Date.now() + FINISH_TIMEOUT_MS
 while (Date.now() < deadline && !done(await ours())) {

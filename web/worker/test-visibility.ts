@@ -2,6 +2,9 @@
 import { activeContracts, treasuryParty } from '../lib/ledger.ts'
 import { listCustomers } from '../lib/customers.ts'
 import { listDeposits } from '../lib/deposits.ts'
+import { demoBusiness } from '../lib/businesses.ts'
+
+const demo = await demoBusiness()
 
 const business = await treasuryParty()
 const customers = await listCustomers()
@@ -12,7 +15,7 @@ const check = (ok: boolean, msg: string) => {
 }
 
 const all = await activeContracts(business, ':Naust:DepositReceipt')
-const swept = (await listDeposits()).filter((d) => d.state === 'swept')
+const swept = (await listDeposits(demo.id)).filter((d) => d.state === 'swept')
 check(swept.every((d) => all.some((r) => r.createArgument.sourceInstructionCid === d.instruction_cid)),
   `business sees a receipt for each of ${swept.length} swept deposits`)
 

@@ -2,6 +2,9 @@
 // The send call returns after the transfer commits, so its return time stands in for the commit time.
 import { spawn, execFileSync } from 'node:child_process'
 import { listDeposits } from '../lib/deposits.ts'
+import { demoBusiness } from '../lib/businesses.ts'
+
+const demo = await demoBusiness()
 
 const N = 10
 const BOUND_S = 15
@@ -12,7 +15,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const watcher = spawn('node', [...node, 'worker/watcher.ts'], { stdio: 'ignore' })
 process.on('exit', () => watcher.kill('SIGTERM'))
 await sleep(4_000)
-const known = new Set((await listDeposits()).map((d) => d.instruction_cid))
+const known = new Set((await listDeposits(demo.id)).map((d) => d.instruction_cid))
 
 const committed: { ref: string; at: number }[] = []
 for (let i = 0; i < N; i++) {
@@ -22,7 +25,7 @@ for (let i = 0; i < N; i++) {
   await sleep(2_000)
 }
 
-const ours = async () => (await listDeposits()).filter((d) => !known.has(d.instruction_cid)).sort((a, b) => a.seen_at.localeCompare(b.seen_at))
+const ours = async () => (await listDeposits(demo.id)).filter((d) => !known.has(d.instruction_cid)).sort((a, b) => a.seen_at.localeCompare(b.seen_at))
 const done = (ds: Awaited<ReturnType<typeof ours>>) => ds.length === N && ds.every((d) => d.state === 'swept' || d.state === 'failed')
 const deadline = Date.now() + 120_000
 while (Date.now() < deadline && !done(await ours())) {

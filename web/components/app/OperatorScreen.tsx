@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import type { CustomerView, DepositView } from '@/lib/views.ts'
 import { CopyButton } from './CopyButton'
-import { RetryButton } from './RetryButton'
+import { ActionButton } from './ActionButton'
+import { InviteButton } from './InviteButton'
 import { StatePill } from './StatePill'
 import { amount, clock, usePoll } from './usePoll'
 import { partyName } from '@/lib/party.ts'
@@ -12,11 +13,22 @@ import styles from './app.module.css'
 export type Treasury = { party: string; label: string; balance: string }
 type Slot<T> = { data?: T; error?: string; loading: boolean }
 
-export function OperatorScreen() {
-  const treasury = usePoll<Treasury>('/api/ui/treasury', 3000)
-  const customers = usePoll<CustomerView[]>('/api/ui/customers')
-  const deposits = usePoll<DepositView[]>('/api/ui/deposits')
-  return <OperatorView treasury={treasury} customers={customers} deposits={deposits} />
+// `/api/demo` is the public, read-only demo; `/api/app` is the signed-in operator's own business.
+export function OperatorScreen({ api = '/api/demo', title }: { api?: '/api/demo' | '/api/app'; title?: string }) {
+  const treasury = usePoll<Treasury | null>(`${api}/treasury`, 3000)
+  const customers = usePoll<CustomerView[]>(`${api}/customers`)
+  const deposits = usePoll<DepositView[]>(`${api}/deposits`)
+  const manage = api === '/api/app'
+  return (
+    <OperatorView
+      treasury={treasury}
+      customers={customers}
+      deposits={deposits}
+      demoNote={!manage}
+      manage={manage}
+      title={title}
+    />
+  )
 }
 
 // The screen itself, separate from fetching, so the landing page can render it from a fixed snapshot.
@@ -25,22 +37,27 @@ export function OperatorView({
   customers,
   deposits,
   demoNote = true,
+  manage = false,
+  title = 'Deposits',
 }: {
-  treasury: Slot<Treasury>
+  treasury: Slot<Treasury | null>
   customers: Slot<CustomerView[]>
   deposits: Slot<DepositView[]>
   demoNote?: boolean
+  manage?: boolean
+  title?: string
 }) {
   const swept = deposits.data?.filter((d) => d.state === 'swept').length ?? 0
   const inFlight = deposits.data?.filter((d) => d.state !== 'swept' && d.state !== 'failed').length ?? 0
   const offline = treasury.error && customers.error && deposits.error
+  const unconnected = manage && treasury.data === null && !treasury.loading
 
   return (
     <main id="main-content" className={styles.main}>
       <div className={styles.titleRow}>
         <div>
-          <h1 className={`serif ${styles.title}`}>Deposits</h1>
-          <p className={styles.subtitle}>Live from the ledger. Updates every 2 seconds.</p>
+          <h1 className={`serif ${styles.title}`}>{title}</h1>
+          {!unconnected && <p className={styles.subtitle}>Live from the ledger. Updates every 2 seconds.</p>}
         </div>
       </div>
 
@@ -48,6 +65,13 @@ export function OperatorView({
         <p className={styles.note}>
           Customer addresses here come from a pool on the shared DevNet node, so their fingerprint is the node&rsquo;s.
           On your own node they sit under your business&rsquo;s key.
+        </p>
+      )}
+
+      {unconnected && (
+        <p className={styles.note}>
+          Deposit addresses come from your Canton node. Once Naust can connect to it, you&rsquo;ll create customers
+          here and each one gets an address of their own.
         </p>
       )}
 
@@ -61,7 +85,7 @@ export function OperatorView({
         <div className={styles.stat}>
           <p className={styles.statLabel}>Treasury balance</p>
           <p className={`serif ${styles.statValue}`}>
-            {treasury.data ? `${amount(treasury.data.balance)} CC` : treasury.loading ? '…' : 'Unavailable'}
+            {treasury.data ? `${amount(treasury.data.balance)} CC` : treasury.loading ? '…' : unconnected ? 'No node yet' : 'Unavailable'}
           </p>
           {treasury.data && <p className={styles.statFoot} title={treasury.data.party}>{partyName(treasury.data.party)}</p>}
         </div>
@@ -82,7 +106,7 @@ export function OperatorView({
           Customers
         </h2>
         {customers.data && customers.data.length === 0 ? (
-          <p className={styles.empty}>No customers yet. Run <code>npm run seed -- Ada</code> to create the first one.</p>
+          <p className={styles.empty}>No customers yet.</p>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -96,15 +120,24 @@ export function OperatorView({
                   <th scope="col" className={styles.num}>
                     Received
                   </th>
+                  {manage && (
+                    <th scope="col">
+                      <span className="visually-hidden">Customer access</span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {customers.data?.map((c) => (
                   <tr key={c.id}>
                     <td>
-                      <Link href={`/customer/${encodeURIComponent(c.ref)}`} className={styles.rowLink}>
-                        {c.ref}
-                      </Link>
+                      {manage ? (
+                        c.ref
+                      ) : (
+                        <Link href={`/customer/${encodeURIComponent(c.ref)}`} className={styles.rowLink}>
+                          {c.ref}
+                        </Link>
+                      )}
                     </td>
                     <td>
                       <span className={styles.address}>
@@ -114,6 +147,11 @@ export function OperatorView({
                     </td>
                     <td className={styles.num}>{c.deposits}</td>
                     <td className={styles.num}>{amount(c.received)} CC</td>
+                    {manage && (
+                      <td className={styles.rowAction}>
+                        <InviteButton customerId={c.id} customerRef={c.ref} />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -128,7 +166,9 @@ export function OperatorView({
         </h2>
         {deposits.data && deposits.data.length === 0 ? (
           <p className={styles.empty}>
-            No deposits yet. Send Canton Coin to any address above and it appears here within seconds.
+            {unconnected
+              ? 'No deposits yet.'
+              : 'No deposits yet. Send Canton Coin to any address above and it appears here within seconds.'}
           </p>
         ) : (
           <ol className={styles.feed} aria-live="polite">
@@ -146,8 +186,21 @@ export function OperatorView({
                 </span>
                 <span className={styles.feedState}>
                   <StatePill state={d.state} />
-                  {d.state === 'failed' && (
-                    <RetryButton id={d.id} label={`Retry ${amount(d.amount)} CC deposit for ${d.customerRef}`} />
+                  {manage && d.state === 'failed' && (
+                    <>
+                      <ActionButton
+                        url={`/api/app/deposits/${encodeURIComponent(d.id)}/retry`}
+                        label={`Retry ${amount(d.amount)} CC deposit for ${d.customerRef}`}
+                        idle="Retry"
+                        busy="Retrying"
+                      />
+                      <ActionButton
+                        url={`/api/app/deposits/${encodeURIComponent(d.id)}/dismiss`}
+                        label={`Dismiss ${amount(d.amount)} CC deposit for ${d.customerRef}`}
+                        idle="Dismiss"
+                        busy="Dismissing"
+                      />
+                    </>
                   )}
                 </span>
               </li>

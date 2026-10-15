@@ -5,10 +5,10 @@ export const metadata: Metadata = { title: 'Terms of service · Naust' }
 
 export default function Terms() {
   return (
-    <LegalPage title="Terms of service" updated="7 October 2026">
+    <LegalPage title="Terms of service" updated="10 October 2026">
       <p>
-        Naust is a project built for HackCanton Season 3 by Jadon (jadonamite on GitHub). These terms cover this website
-        and its demo screens.
+        Naust is built by Jadon (jadonamite on GitHub). These terms cover this website, its demo screens and Naust
+        accounts. They haven&rsquo;t been reviewed by a lawyer yet.
       </p>
 
       <h2>What the demo is</h2>
@@ -16,6 +16,18 @@ export default function Terms() {
         The operator and customer screens run against Canton DevNet, a test network. Every amount shown is test Canton
         Coin with no monetary value. Nothing on this site moves real money, holds funds for you, or offers a financial
         service.
+      </p>
+
+      <h2>Accounts</h2>
+      <p>
+        You need to be at least 13 to create an account, and older where your country&rsquo;s law requires it. Keep
+        access to your email address: it&rsquo;s how you sign in. If you create a business, you&rsquo;re responsible for
+        the customers you add and for having the right to invite them. Accounts are free while Naust runs on test
+        networks.
+      </p>
+      <p>
+        Naust runs on Canton test networks today. Amounts are test Canton Coin with no monetary value, and no account can
+        move real money through this site.
       </p>
 
       <h2>Using the site</h2>

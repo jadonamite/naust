@@ -28,6 +28,13 @@ if (missing.length) {
 
 const v = (k: (typeof required)[number]) => process.env[k] as string
 
+// Settings only the web app needs; the watcher runs without them, so they are checked when first read.
+function need(k: string): string {
+  const value = process.env[k]
+  if (!value) throw new Error(`Missing setting ${k} in ${file}. See .env.example.`)
+  return value
+}
+
 export const env = {
   keycloakTokenUrl: v('KEYCLOAK_TOKEN_URL'),
   keycloakClientId: v('KEYCLOAK_CLIENT_ID'),
@@ -37,4 +44,13 @@ export const env = {
   validatorApi: v('VALIDATOR_API').replace(/\/$/, '') + '/api/validator/v0',
   databaseUrl: process.env.DATABASE_URL as string,
   pollMs: Number(process.env.NAUST_POLL_MS ?? 3000),
+  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
+  get authSecret() {
+    return need('BETTER_AUTH_SECRET')
+  },
+  // Without a Resend key, emails are printed to the server log instead of sent (local development only).
+  resendKey: process.env.RESEND_API_KEY,
+  get emailFrom() {
+    return need('EMAIL_FROM')
+  },
 }

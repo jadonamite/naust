@@ -57,8 +57,8 @@ export function errorReason(error: string | null): string | null {
   return error.charAt(0).toUpperCase() + error.slice(1) + (/[.!?]$/.test(error) ? '' : '.')
 }
 
-export async function customerViews(): Promise<CustomerView[]> {
-  const [deposits, customers] = await Promise.all([listDeposits(), listCustomers()])
+export async function customerViews(businessId: string): Promise<CustomerView[]> {
+  const [deposits, customers] = await Promise.all([listDeposits(businessId), listCustomers(businessId)])
   return customers.map((c) => {
     const own = deposits.filter((d) => d.customer_id === c.id)
     return {
@@ -75,8 +75,8 @@ export async function customerViews(): Promise<CustomerView[]> {
   })
 }
 
-export async function depositViews(customerId?: string): Promise<DepositView[]> {
-  const [customers, deposits] = await Promise.all([listCustomers(), listDeposits(customerId)])
+export async function depositViews(businessId: string, customerId?: string): Promise<DepositView[]> {
+  const [customers, deposits] = await Promise.all([listCustomers(businessId), listDeposits(businessId, customerId)])
   const refs = new Map(customers.map((c) => [c.id, c.ref]))
   return deposits.map((d) => ({
     id: d.instruction_cid,
@@ -96,6 +96,7 @@ export async function depositViews(customerId?: string): Promise<DepositView[]> 
   }))
 }
 
+// The treasury of the one ledger connection there is today (the demo's). Per-business treasuries come with ledger connections.
 export async function treasuryView(): Promise<{ party: string; label: string; balance: string }> {
   const party = await treasuryParty()
   const holdings = (await activeContracts(party, AMULET)).filter((c) => c.createArgument.owner === party)

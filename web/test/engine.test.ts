@@ -19,6 +19,7 @@ test('sums ledger amounts exactly', () => {
 
 const deposit = (over: Partial<Deposit> = {}): Deposit => ({
   instruction_cid: 'cid',
+  business_id: 'biz',
   customer_id: 'cus',
   amount: '5.0000000000',
   instrument: 'Amulet@DSO',
@@ -33,6 +34,8 @@ const deposit = (over: Partial<Deposit> = {}): Deposit => ({
   error: null,
   attempts: 0,
   next_attempt_at: null,
+  dismissed_at: null,
+  dismissed_by: null,
   seen_at: '2026-10-10T00:00:00.000Z',
   updated_at: '2026-10-10T00:00:00.000Z',
   ...over,

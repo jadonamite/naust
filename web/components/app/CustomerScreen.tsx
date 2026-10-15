@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import type { CustomerView, ReceiptView } from '@/lib/views.ts'
 import { CopyButton } from './CopyButton'
-import { amount, day, short, usePoll } from './usePoll'
+import { ReceiptList } from './ReceiptList'
+import { usePoll } from './usePoll'
 import { partyName } from '@/lib/party.ts'
 import styles from './app.module.css'
 
 export function CustomerScreen({ id }: { id: string }) {
-  const path = `/api/ui/customers/${encodeURIComponent(id)}`
+  const path = `/api/demo/customers/${encodeURIComponent(id)}`
   const customer = usePoll<CustomerView>(path, 10000)
   const receipts = usePoll<ReceiptView[]>(`${path}/receipts`, 3000)
 
@@ -62,32 +63,7 @@ export function CustomerScreen({ id }: { id: string }) {
         {receipts.data && receipts.data.length === 0 && (
           <p className={styles.empty}>No deposits yet. Once you send to the address above, your receipt appears here.</p>
         )}
-        {receipts.data && receipts.data.length > 0 && (
-          <ol className={styles.receipts} aria-live="polite">
-            {receipts.data.map((r) => (
-              <li key={r.cid} className={styles.receipt}>
-                <div className={styles.receiptHead}>
-                  <p className={`serif ${styles.receiptAmount}`}>{amount(r.amount)} CC</p>
-                  <p className={styles.receiptWhen}>{day(r.receivedAt)}</p>
-                </div>
-                <dl className={styles.receiptFields}>
-                  <dt>From</dt>
-                  <dd>{r.senderLabel}</dd>
-                  <dt>Accepted in</dt>
-                  <dd>
-                    <code>{short(r.acceptUpdateId)}</code>
-                  </dd>
-                  <dt>Swept in</dt>
-                  <dd>{r.sweepUpdateId ? <code>{short(r.sweepUpdateId)}</code> : 'In progress'}</dd>
-                  <dt>Receipt</dt>
-                  <dd>
-                    <code>{short(r.cid)}</code>
-                  </dd>
-                </dl>
-              </li>
-            ))}
-          </ol>
-        )}
+        {receipts.data && receipts.data.length > 0 && <ReceiptList receipts={receipts.data} />}
       </section>
     </main>
   )

@@ -6,7 +6,7 @@ import styles from './CookieNotice.module.css'
 
 const KEY = 'naust-cookie-notice'
 
-// Naust sets no tracking cookies, so this is a notice, not a consent form. Closing it is remembered locally.
+// Naust sets only cookies the site needs, so this is a notice, not a consent form. Closing it is remembered locally.
 export function CookieNotice() {
   const [open, setOpen] = useState(false)
 
@@ -29,7 +29,7 @@ export function CookieNotice() {
   return (
     <aside className={styles.notice} aria-label="Cookie notice">
       <p>
-        Naust sets no tracking or advertising cookies. This site remembers only that you closed this notice.{' '}
+        Naust sets no tracking or advertising cookies. Signing in uses two cookies the site needs to work.{' '}
         <Link href="/legal/cookies">Cookie policy</Link>
       </p>
       <button type="button" className="btn btn-sm btn-ink" onClick={close}>

@@ -5,10 +5,21 @@ import { env } from './env.ts'
 export const DEPOSIT_STATES = ['seen', 'accepted', 'receipted', 'sweeping', 'swept', 'failed'] as const
 export type DepositState = (typeof DEPOSIT_STATES)[number]
 
-export type Customer = { id: string; party: string; ref: string; account_cid: string | null; created_at: string }
+export type Customer = {
+  id: string
+  business_id: string
+  party: string
+  ref: string
+  account_cid: string | null
+  created_at: string
+}
+
+export type Business = { id: string; name: string; is_demo: boolean; created_at: Date }
+export type Role = 'owner' | 'member'
 
 export type Deposit = {
   instruction_cid: string
+  business_id: string
   customer_id: string
   amount: string
   instrument: string
@@ -23,6 +34,8 @@ export type Deposit = {
   error: string | null
   attempts: number
   next_attempt_at: Date | null
+  dismissed_at: Date | null
+  dismissed_by: string | null
   seen_at: string
   updated_at: string
 }
@@ -65,6 +78,60 @@ export const migrations = [
   // Amounts become exact decimals; next_attempt_at spaces out retries after an error.
   `ALTER TABLE deposits ALTER COLUMN amount TYPE NUMERIC(38,10) USING amount::numeric;
    ALTER TABLE deposits ADD COLUMN next_attempt_at TIMESTAMPTZ;`,
+  // Accounts (tables as Better Auth expects them, see lib/accounts.ts), businesses and their members,
+  // customer sign-in by invite. Existing customers and deposits become the demo business's.
+  `create table "auth_user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" boolean not null, "image" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null, "ageCheck" text);
+   create table "auth_session" ("id" text not null primary key, "expiresAt" timestamptz not null, "token" text not null unique, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null, "ipAddress" text, "userAgent" text, "userId" text not null references "auth_user" ("id") on delete cascade);
+   create table "auth_account" ("id" text not null primary key, "accountId" text not null, "providerId" text not null, "userId" text not null references "auth_user" ("id") on delete cascade, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" timestamptz, "refreshTokenExpiresAt" timestamptz, "scope" text, "password" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null);
+   create table "auth_verification" ("id" text not null primary key, "identifier" text not null, "value" text not null, "expiresAt" timestamptz not null, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null);
+   create table "auth_rate_limit" ("id" text not null primary key, "key" text not null unique, "count" integer not null, "lastRequest" bigint not null);
+   create index "auth_session_userId_idx" on "auth_session" ("userId");
+   create index "auth_account_userId_idx" on "auth_account" ("userId");
+   create index "auth_verification_identifier_idx" on "auth_verification" ("identifier");
+   CREATE TABLE businesses (
+     id TEXT PRIMARY KEY,
+     name TEXT NOT NULL,
+     is_demo BOOLEAN NOT NULL DEFAULT false,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   );
+   CREATE UNIQUE INDEX businesses_one_demo ON businesses (is_demo) WHERE is_demo;
+   CREATE TABLE business_members (
+     business_id TEXT NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+     user_id TEXT NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+     role TEXT NOT NULL CHECK (role IN ('owner', 'member')),
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     PRIMARY KEY (business_id, user_id)
+   );
+   CREATE INDEX business_members_user ON business_members(user_id);
+   INSERT INTO businesses (id, name, is_demo) SELECT 'biz_demo', 'MagnaXchange', true WHERE EXISTS (SELECT 1 FROM customers);
+   ALTER TABLE customers ADD COLUMN business_id TEXT REFERENCES businesses(id);
+   ALTER TABLE deposits ADD COLUMN business_id TEXT REFERENCES businesses(id);
+   UPDATE customers SET business_id = 'biz_demo';
+   UPDATE deposits SET business_id = 'biz_demo';
+   ALTER TABLE customers ALTER COLUMN business_id SET NOT NULL;
+   ALTER TABLE deposits ALTER COLUMN business_id SET NOT NULL;
+   ALTER TABLE customers DROP CONSTRAINT customers_ref_key;
+   ALTER TABLE customers ADD CONSTRAINT customers_business_ref UNIQUE (business_id, ref);
+   CREATE INDEX deposits_business_seen ON deposits(business_id, seen_at);
+   ALTER TABLE deposits ADD COLUMN dismissed_at TIMESTAMPTZ;
+   ALTER TABLE deposits ADD COLUMN dismissed_by TEXT REFERENCES auth_user(id) ON DELETE SET NULL;
+   CREATE TABLE customer_users (
+     customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+     user_id TEXT NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     PRIMARY KEY (customer_id, user_id)
+   );
+   CREATE INDEX customer_users_user ON customer_users(user_id);
+   -- Only a hash of each invite token is stored; the link itself is shown once.
+   CREATE TABLE customer_invites (
+     token_hash TEXT PRIMARY KEY,
+     customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+     created_by TEXT REFERENCES auth_user(id) ON DELETE SET NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     expires_at TIMESTAMPTZ NOT NULL,
+     used_at TIMESTAMPTZ,
+     used_by TEXT REFERENCES auth_user(id) ON DELETE SET NULL
+   );`,
 ]
 
 export type Sql = postgres.Sql<{ bigint: number }>

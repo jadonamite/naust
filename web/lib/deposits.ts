@@ -51,11 +51,21 @@ export async function depositById(cid: string): Promise<Deposit | undefined> {
   return get(cid)
 }
 
-export async function listDeposits(customerId?: string): Promise<Deposit[]> {
+// A business's own deposit, or nothing: requests name a deposit ID, so every lookup is scoped.
+export async function businessDeposit(businessId: string, cid: string): Promise<Deposit | undefined> {
+  const d = await get(cid)
+  return d?.business_id === businessId ? d : undefined
+}
+
+// One business's deposits, newest first. Dismissed ones are left out.
+export async function listDeposits(businessId: string, customerId?: string): Promise<Deposit[]> {
   const sql = await db()
   return customerId
-    ? await sql<Deposit[]>`SELECT * FROM deposits WHERE customer_id = ${customerId} ORDER BY seen_at DESC`
-    : await sql<Deposit[]>`SELECT * FROM deposits ORDER BY seen_at DESC`
+    ? await sql<Deposit[]>`
+        SELECT * FROM deposits WHERE business_id = ${businessId} AND customer_id = ${customerId} AND dismissed_at IS NULL
+        ORDER BY seen_at DESC`
+    : await sql<Deposit[]>`
+        SELECT * FROM deposits WHERE business_id = ${businessId} AND dismissed_at IS NULL ORDER BY seen_at DESC`
 }
 
 export async function unfinishedDeposits(): Promise<Deposit[]> {
@@ -72,8 +82,8 @@ export async function recordSeen(instruction: CreatedEvent, customer: Customer, 
   const sql = await db()
   const res = await sql`
     INSERT INTO deposits
-      (instruction_cid, customer_id, amount, instrument, sender, state, seen_offset, seen_at, updated_at)
-    VALUES (${instruction.contractId}, ${customer.id}, ${t.amount}, ${`${t.instrumentId.id}@${t.instrumentId.admin}`},
+      (instruction_cid, business_id, customer_id, amount, instrument, sender, state, seen_offset, seen_at, updated_at)
+    VALUES (${instruction.contractId}, ${customer.business_id}, ${customer.id}, ${t.amount}, ${`${t.instrumentId.id}@${t.instrumentId.admin}`},
       ${t.sender}, 'seen', ${ledgerOffset}, ${now()}, ${now()})
     ON CONFLICT (instruction_cid) DO NOTHING`
   return res.count > 0
@@ -240,6 +250,14 @@ export function resumeState(d: Deposit): Deposit['state'] {
   if (d.receipt_cid) return 'receipted'
   if (d.accept_update_id) return 'accepted'
   return 'seen'
+}
+
+// Hide a failed deposit from the feed. It stays in the database, with who dismissed it and when.
+export async function dismissDeposit(cid: string, userId: string): Promise<Deposit | undefined> {
+  const d = await get(cid)
+  if (!d || d.state !== 'failed') return d
+  await patch(cid, { dismissed_at: new Date(), dismissed_by: userId })
+  return await get(cid)
 }
 
 // Put a failed deposit back at the step it reached. Every step checks the ledger first, so a retry cannot repeat work.

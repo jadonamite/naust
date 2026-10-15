@@ -55,6 +55,16 @@ Receipts are signed by the business and observed by the customer's address. The 
 receipt only to those two parties, so one customer cannot see another's deposits. That rule lives
 in the Daml contract, not in a filter in our code.
 
+### Accounts
+
+Businesses and their customers both sign in with a 6-digit code sent by email; nobody has a password.
+New accounts pass a date-of-birth check first, and only the result is kept. An operator creates a
+business at `/app` and invites each customer with a single-use link. The customer signs in at that
+link and sees their deposit address and receipts at `/me`, read from the ledger as their own address.
+Every request is checked against the signed-in business or customer.
+
+The MagnaXchange demo stays public and read-only at `/operator` and `/customer/Ada`.
+
 ### The contracts
 
 `daml/main/daml/Naust.daml` holds two templates.
@@ -110,6 +120,9 @@ npm run dev               # the app, on http://localhost:3000
 npm run watch             # the watcher loop, in a second terminal
 ```
 
+Sign in at http://localhost:3000/sign-up. Without `RESEND_API_KEY`, the sign-in code appears in the
+terminal running `npm run dev`.
+
 The watcher calls the same tick as the deployed app. Pointed at the same database, the two share one
 lease and never process the same deposit at the same time.
 
@@ -127,8 +140,10 @@ They live in the repository-root `.env`, which git ignores. `.env.example` lists
 | `NAUST_POOL` | the customer address pool, default `Ada,Ben,Tokunbo` |
 | `NAUST_POLL_MS` | the watcher's interval, default 3000 |
 | `PORT` | when set, the watcher serves `/healthz` on it |
-| `NEXT_PUBLIC_SITE_URL` | the public address, used for link previews |
-| `NEXT_PUBLIC_NAUST_BUSINESS` | the business name addresses are shown under, ENS-style (`MagnaXchange-Ada`). Default `MagnaXchange`. |
+| `NEXT_PUBLIC_SITE_URL` | the public address, used for link previews, sign-in and invite links |
+| `NEXT_PUBLIC_NAUST_BUSINESS` | the demo business's name, which its addresses are shown under, ENS-style (`MagnaXchange-Ada`). Default `MagnaXchange`. |
+| `BETTER_AUTH_SECRET` | signs sessions and the age-check cookie; at least 32 random characters (`openssl rand -hex 32`). The web app needs it; the watcher doesn't. |
+| `RESEND_API_KEY`, `EMAIL_FROM` | send sign-in codes through Resend, from an address on a domain verified there. Without a key, local development prints codes to the server log; production refuses to start a sign-in. |
 
 ### Scripts
 
