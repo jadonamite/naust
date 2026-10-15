@@ -4,6 +4,9 @@ Written 8 October 2026. Naust today proves the idea on a shared DevNet node with
 is what stands between that and something a Canton business runs in production, in the order it
 should happen. Each phase says why it comes where it does.
 
+The detailed build for running on a business's own node, preapproved addresses and scheduled
+sweeps is in [implementation-plan.md](implementation-plan.md).
+
 ## What the demo already does that a product keeps
 
 - A deposit address per customer, with no memo and no change for the sender.
