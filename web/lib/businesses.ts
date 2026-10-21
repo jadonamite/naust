@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { db, type Business, type Role } from './db.ts'
 import { BUSINESS_NAME } from './party.ts'
+import { treasuryParty } from './ledger.ts'
 
 const newId = (prefix: string) => prefix + randomUUID().replaceAll('-', '').slice(0, 16)
 
@@ -39,4 +40,30 @@ export async function addMember(businessId: string, userId: string, role: Role):
   await sql`
     INSERT INTO business_members (business_id, user_id, role) VALUES (${businessId}, ${userId}, ${role})
     ON CONFLICT (business_id, user_id) DO UPDATE SET role = excluded.role`
+}
+
+export async function businessById(id: string): Promise<Business | undefined> {
+  const sql = await db()
+  const [b] = await sql<Business[]>`SELECT * FROM businesses WHERE id = ${id}`
+  return b
+}
+
+// Where a business's deposits are swept to: its own treasury party, or the node's primary party.
+export async function treasuryFor(businessId: string): Promise<string> {
+  return (await businessById(businessId))?.treasury_party ?? (await treasuryParty())
+}
+
+// Businesses anyone may view read-only, for the operator switcher.
+export async function publicBusinesses(): Promise<Pick<Business, 'id' | 'name' | 'public_slug'>[]> {
+  const sql = await db()
+  return await sql`SELECT id, name, public_slug FROM businesses WHERE public_slug IS NOT NULL ORDER BY created_at`
+}
+
+// The public business a read-only screen asked for; the demo business when none is named.
+export async function publicBusiness(slug?: string | null): Promise<Business> {
+  if (!slug) return demoBusiness()
+  const sql = await db()
+  const [b] = await sql<Business[]>`SELECT * FROM businesses WHERE public_slug = ${slug}`
+  if (!b) throw new Error('operator not found')
+  return b
 }

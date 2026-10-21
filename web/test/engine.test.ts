@@ -128,3 +128,14 @@ test('each deposit is advanced once per tick, and scanning stops at the budget',
   assert.equal(calls, 1)
   assert.ok(scans >= 2)
 })
+
+test('the deposit webhook is signed over the exact body and carries the receipt evidence', async () => {
+  const { sign, sweptEvent } = await import('../lib/webhooks.ts')
+  const { createHmac } = await import('node:crypto')
+  const body = '{"event":"deposit.swept"}'
+  assert.equal(sign(body, 'k'), 'sha256=' + createHmac('sha256', 'k').update(body).digest('hex'))
+  assert.notEqual(sign(body, 'k'), sign(body + ' ', 'k'))
+  const e = sweptEvent(deposit({ state: 'swept', instrument: 'Amulet@dso::1', accept_update_id: 'a', receipt_cid: 'r', sweep_update_id: 's' }),
+    { id: 'cus', business_id: 'biz', party: 'p::1', ref: 'Anita', account_cid: null, created_at: '' })
+  assert.deepEqual([e.customerRef, e.instrumentId, e.instrumentAdmin, e.receiptCid, e.sweepUpdateId], ['Anita', 'Amulet', 'dso::1', 'r', 's'])
+})

@@ -442,3 +442,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The operator switcher under the header on the read-only screens. */
+.operatorSwitch {
+  width: fit-content;
+  margin: var(--space-6) auto 0;
+}

@@ -14,10 +14,12 @@ export type Treasury = { party: string; label: string; balance: string }
 type Slot<T> = { data?: T; error?: string; loading: boolean }
 
 // `/api/demo` is the public, read-only demo; `/api/app` is the signed-in operator's own business.
-export function OperatorScreen({ api = '/api/demo', title }: { api?: '/api/demo' | '/api/app'; title?: string }) {
-  const treasury = usePoll<Treasury | null>(`${api}/treasury`, 3000)
-  const customers = usePoll<CustomerView[]>(`${api}/customers`)
-  const deposits = usePoll<DepositView[]>(`${api}/deposits`)
+// `op` picks which public business the read-only screen shows.
+export function OperatorScreen({ api = '/api/demo', title, op }: { api?: '/api/demo' | '/api/app'; title?: string; op?: string }) {
+  const q = op ? `?op=${encodeURIComponent(op)}` : ''
+  const treasury = usePoll<Treasury | null>(`${api}/treasury${q}`, 3000)
+  const customers = usePoll<CustomerView[]>(`${api}/customers${q}`)
+  const deposits = usePoll<DepositView[]>(`${api}/deposits${q}`)
   const manage = api === '/api/app'
   return (
     <OperatorView
@@ -27,6 +29,7 @@ export function OperatorScreen({ api = '/api/demo', title }: { api?: '/api/demo'
       demoNote={!manage}
       manage={manage}
       title={title}
+      op={op}
     />
   )
 }
@@ -39,6 +42,7 @@ export function OperatorView({
   demoNote = true,
   manage = false,
   title = 'Deposits',
+  op,
 }: {
   treasury: Slot<Treasury | null>
   customers: Slot<CustomerView[]>
@@ -46,6 +50,7 @@ export function OperatorView({
   demoNote?: boolean
   manage?: boolean
   title?: string
+  op?: string
 }) {
   const swept = deposits.data?.filter((d) => d.state === 'swept').length ?? 0
   const inFlight = deposits.data?.filter((d) => d.state !== 'swept' && d.state !== 'failed').length ?? 0
@@ -87,7 +92,7 @@ export function OperatorView({
           <p className={`serif ${styles.statValue}`}>
             {treasury.data ? `${amount(treasury.data.balance)} CC` : treasury.loading ? '…' : unconnected ? 'No node yet' : 'Unavailable'}
           </p>
-          {treasury.data && <p className={styles.statFoot} title={treasury.data.party}>{partyName(treasury.data.party)}</p>}
+          {treasury.data && <p className={styles.statFoot} title={treasury.data.party}>{treasury.data.label}</p>}
         </div>
         <div className={styles.stat}>
           <p className={styles.statLabel}>Deposits matched</p>
@@ -134,14 +139,14 @@ export function OperatorView({
                       {manage ? (
                         c.ref
                       ) : (
-                        <Link href={`/customer/${encodeURIComponent(c.ref)}`} className={styles.rowLink}>
+                        <Link href={`/customer/${encodeURIComponent(c.ref)}${op ? `?op=${encodeURIComponent(op)}` : ''}`} className={styles.rowLink}>
                           {c.ref}
                         </Link>
                       )}
                     </td>
                     <td>
                       <span className={styles.address}>
-                        <code title={c.address}>{partyName(c.address)}</code>
+                        <code title={c.address}>{c.label ?? partyName(c.address)}</code>
                         <CopyButton value={c.address} label={`Copy ${c.ref}'s deposit address`} />
                       </span>
                     </td>

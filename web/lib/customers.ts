@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { db, type Customer } from './db.ts'
+import { treasuryFor } from './businesses.ts'
 import { ledgerUserId } from './auth.ts'
 import { activeContracts, createdIn, submit, treasuryParty } from './ledger.ts'
 
@@ -46,7 +47,8 @@ export class PoolExhaustedError extends Error {}
 export class DuplicateRefError extends Error {}
 
 // Reserve the next free pool address in Postgres, then create the CustomerAccount on the ledger.
-export async function createCustomer(businessId: string, ref: string): Promise<Customer> {
+// `party` picks a specific free address from the pool; otherwise the first free one is used.
+export async function createCustomer(businessId: string, ref: string, party?: string): Promise<Customer> {
   ref = ref.trim()
   if (!ref) throw new Error('customer reference is required')
   const sql = await db()
@@ -54,7 +56,9 @@ export async function createCustomer(businessId: string, ref: string): Promise<C
     throw new DuplicateRefError(`reference ${ref} exists`)
   }
   const taken = new Set((await listCustomers()).map((c) => c.party))
-  const party = (await poolParties()).find((p) => !taken.has(p))
+  const free = (await poolParties()).filter((p) => !taken.has(p))
+  if (party && !free.includes(party)) throw new PoolExhaustedError('that address is not a free address in the pool')
+  party ??= free[0]
   if (!party) throw new PoolExhaustedError('no free deposit address left in the pool')
 
   const id = 'cus_' + randomUUID().replaceAll('-', '').slice(0, 16)
@@ -66,7 +70,7 @@ export async function createCustomer(businessId: string, ref: string): Promise<C
 }
 
 async function ensureAccount(c: Customer): Promise<void> {
-  const business = await treasuryParty()
+  const business = await treasuryFor(c.business_id)
   const existing = (await activeContracts(c.party, ':Naust:CustomerAccount')).find(
     (a) => a.createArgument.business === business && a.createArgument.customer === c.party,
   )

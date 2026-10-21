@@ -1,13 +1,13 @@
 import type { NextRequest } from 'next/server'
-import { demoBusiness } from '@/lib/businesses.ts'
+import { publicBusiness } from '@/lib/businesses.ts'
 import { findCustomer } from '@/lib/customers.ts'
 import { receiptViews } from '@/lib/views.ts'
 import { NotFound, respond } from '../../../../respond.ts'
 
-export async function GET(_req: NextRequest, ctx: RouteContext<'/api/demo/customers/[id]/receipts'>) {
+export async function GET(req: NextRequest, ctx: RouteContext<'/api/demo/customers/[id]/receipts'>) {
   const { id } = await ctx.params
   return respond(async () => {
-    const customer = await findCustomer((await demoBusiness()).id, decodeURIComponent(id))
+    const customer = await findCustomer((await publicBusiness(req.nextUrl.searchParams.get('op'))).id, decodeURIComponent(id))
     if (!customer) throw new NotFound('customer not found')
     return receiptViews(customer)
   })

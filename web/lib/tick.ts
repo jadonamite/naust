@@ -4,6 +4,7 @@ import { env } from './env.ts'
 import { TRANSFER_INSTRUCTION, activeContracts, ledgerEnd } from './ledger.ts'
 import { listCustomers, reconcileCustomers } from './customers.ts'
 import { advance, recordSeen, unfinishedDeposits } from './deposits.ts'
+import { notifySwept } from './webhooks.ts'
 
 // One pass of deposit work: record new incoming transfers and advance every unfinished deposit.
 // Only one tick runs at a time, enforced by the 'tick' lease. A running tick renews it; a tick that dies releases it on expiry.
@@ -124,6 +125,7 @@ async function work(): Promise<{ seen: number; events: TickEvent[] }> {
       if (after.state !== d.state || after.error) {
         events.push({ ref: c.ref, from: d.state, to: after.state, ...(after.error ? { error: after.error } : {}) })
       }
+      if (after.state === 'swept' && d.state !== 'swept') await notifySwept(after, c)
     },
     budgetMs: DRAIN_BUDGET_MS,
     intervalMs: 2_000,

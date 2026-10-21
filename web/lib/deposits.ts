@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { db, type Customer, type Deposit } from './db.ts'
+import { treasuryFor } from './businesses.ts'
 import {
   AMULET,
   TRANSFER_INSTRUCTION,
@@ -8,7 +9,6 @@ import {
   createdIn,
   findArchivingTransaction,
   submit,
-  treasuryParty,
   type CreatedEvent,
 } from './ledger.ts'
 import { acceptInstruction, transfer } from './registry.ts'
@@ -216,7 +216,7 @@ async function recordSweep(d: Deposit, business: string): Promise<void> {
 // Drive one deposit as far as it will go. Errors are recorded and retried with growing gaps; the count restarts
 // whenever the deposit gets a step further.
 export async function advance(cid: string, customer: Customer): Promise<Deposit> {
-  const treasury = await treasuryParty()
+  const treasury = await treasuryFor(customer.business_id)
   const startState = (await get(cid)).state
   try {
     let d = await get(cid)

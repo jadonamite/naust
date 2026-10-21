@@ -14,7 +14,19 @@ export type Customer = {
   created_at: string
 }
 
-export type Business = { id: string; name: string; is_demo: boolean; created_at: Date }
+export type Business = {
+  id: string
+  name: string
+  is_demo: boolean
+  created_at: Date
+  // The business's own treasury party; null means the node's primary party.
+  treasury_party: string | null
+  // Where Naust posts each completed deposit, and the key that signs it.
+  webhook_url: string | null
+  webhook_secret: string | null
+  // Set for businesses shown read-only at /operator?op=<slug>.
+  public_slug: string | null
+}
 export type Role = 'owner' | 'member'
 
 export type Deposit = {
@@ -132,6 +144,11 @@ export const migrations = [
      used_at TIMESTAMPTZ,
      used_by TEXT REFERENCES auth_user(id) ON DELETE SET NULL
    );`,
+  `ALTER TABLE businesses ADD COLUMN treasury_party TEXT;
+   ALTER TABLE businesses ADD COLUMN webhook_url TEXT;
+   ALTER TABLE businesses ADD COLUMN webhook_secret TEXT;`,
+  `ALTER TABLE businesses ADD COLUMN public_slug TEXT UNIQUE;
+   UPDATE businesses SET public_slug = 'magnaxchange' WHERE is_demo;`,
 ]
 
 export type Sql = postgres.Sql<{ bigint: number }>

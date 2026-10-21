@@ -8,10 +8,11 @@ import { usePoll } from './usePoll'
 import { partyName } from '@/lib/party.ts'
 import styles from './app.module.css'
 
-export function CustomerScreen({ id }: { id: string }) {
+export function CustomerScreen({ id, op }: { id: string; op?: string }) {
   const path = `/api/demo/customers/${encodeURIComponent(id)}`
-  const customer = usePoll<CustomerView>(path, 10000)
-  const receipts = usePoll<ReceiptView[]>(`${path}/receipts`, 3000)
+  const q = op ? `?op=${encodeURIComponent(op)}` : ''
+  const customer = usePoll<CustomerView>(path + q, 10000)
+  const receipts = usePoll<ReceiptView[]>(`${path}/receipts${q}`, 3000)
 
   if (customer.error === 'customer not found') {
     return (
@@ -47,7 +48,7 @@ export function CustomerScreen({ id }: { id: string }) {
         </p>
         {c ? (
           <div className={styles.bigAddress}>
-            <code title={c.address}>{partyName(c.address)}</code>
+            <code title={c.address}>{c.label ?? partyName(c.address)}</code>
             <CopyButton value={c.address} label="Copy your deposit address" />
           </div>
         ) : (

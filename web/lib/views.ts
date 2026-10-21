@@ -1,9 +1,10 @@
 import type { Customer, Deposit } from './db.ts'
 import { listCustomers } from './customers.ts'
 import { listDeposits } from './deposits.ts'
-import { AMULET, activeContracts, amuletBalance, treasuryParty, type CreatedEvent } from './ledger.ts'
+import { AMULET, activeContracts, amuletBalance, type CreatedEvent } from './ledger.ts'
 import { partyName, senderName } from './party.ts'
 import { sumDecimals } from './decimal.ts'
+import { businessById, treasuryFor } from './businesses.ts'
 import { instrumentIdentity } from './instrument.ts'
 
 // JSON shapes the screens read. Party IDs stay whole; `label` is the readable name (see lib/party.ts).
@@ -61,14 +62,14 @@ export function errorReason(error: string | null): string | null {
 }
 
 export async function customerViews(businessId: string): Promise<CustomerView[]> {
-  const [deposits, customers] = await Promise.all([listDeposits(businessId), listCustomers(businessId)])
+  const [deposits, customers, business] = await Promise.all([listDeposits(businessId), listCustomers(businessId), businessById(businessId)])
   return customers.map((c) => {
     const own = deposits.filter((d) => d.customer_id === c.id)
     return {
       id: c.id,
       ref: c.ref,
       address: c.party,
-      label: label(c.party),
+      label: business ? `${business.name}-${c.ref}` : label(c.party),
       accountCid: c.account_cid,
       createdAt: c.created_at,
       deposits: own.length,
@@ -100,11 +101,11 @@ export async function depositViews(businessId: string, customerId?: string): Pro
   }))
 }
 
-// The treasury of the one ledger connection there is today (the demo's). Per-business treasuries come with ledger connections.
-export async function treasuryView(): Promise<{ party: string; label: string; balance: string }> {
-  const party = await treasuryParty()
+// A business's treasury: its own party when it has one, otherwise the node's primary party.
+export async function treasuryView(businessId: string): Promise<{ party: string; label: string; balance: string }> {
+  const [party, business] = await Promise.all([treasuryFor(businessId), businessById(businessId)])
   const holdings = (await activeContracts(party, AMULET)).filter((c) => c.createArgument.owner === party)
-  return { party, label: label(party), balance: amuletBalance(holdings) }
+  return { party, label: business?.name ?? label(party), balance: amuletBalance(holdings) }
 }
 
 // Read as the customer's own address party, so the ledger, not this code, decides what is visible.
