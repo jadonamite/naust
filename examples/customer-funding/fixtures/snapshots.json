@@ -1,0 +1,11 @@
+{
+  "customers": [
+    { "id": "sample-cus-ada", "ref": "Ada", "address": "sample-Ada::not-a-ledger-party", "label": "Sample Ada", "accountCid": "sample-account-ada" },
+    { "id": "sample-cus-ben", "ref": "Ben", "address": "sample-Ben::not-a-ledger-party", "label": "Sample Ben", "accountCid": "sample-account-ben" },
+    { "id": "sample-cus-tokunbo", "ref": "Tokunbo", "address": "sample-Tokunbo::not-a-ledger-party", "label": "Sample Tokunbo", "accountCid": "sample-account-tokunbo" }
+  ],
+  "deposits": [
+    { "id": "sample-deposit-001", "customerId": "sample-cus-ada", "customerRef": "Ada", "amount": "0.1", "instrument": "Amulet", "sender": "sample-exchange-party", "senderLabel": "Sample exchange", "state": "seen", "reason": null, "seenAt": "2026-10-20T09:00:00.000Z", "updatedAt": "2026-10-20T09:00:00.000Z", "acceptUpdateId": null, "sweepUpdateId": null, "receiptCid": null },
+    { "id": "sample-deposit-002", "customerId": "sample-cus-ada", "customerRef": "Ada", "amount": "0.2", "instrument": "Amulet", "sender": "sample-wallet-party", "senderLabel": "Sample wallet", "state": "seen", "reason": null, "seenAt": "2026-10-20T09:01:00.000Z", "updatedAt": "2026-10-20T09:01:00.000Z", "acceptUpdateId": null, "sweepUpdateId": null, "receiptCid": null }
+  ]
+}

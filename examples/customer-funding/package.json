@@ -1,0 +1,12 @@
+{
+  "name": "naust-customer-funding-example",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node src/cli.mjs serve",
+    "walkthrough": "node src/cli.mjs walkthrough",
+    "sync": "node src/cli.mjs sync",
+    "test": "node --test test/*.test.mjs"
+  }
+}

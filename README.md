@@ -65,6 +65,14 @@ Every request is checked against the signed-in business or customer.
 
 The MagnaXchange demo stays public and read-only at `/operator` and `/customer/Ada`.
 
+### Integration example
+
+The [customer-funding example](examples/customer-funding/README.md) shows a separate application
+mapping Naust customer IDs to its own accounts and recording one local credit per completed deposit.
+It runs with Node.js 24, without installing dependencies or connecting to a ledger. Sample payments
+are labelled, and replaying them after a restart leaves the balance unchanged. An optional HTTP
+adapter reads an authorized Naust instance, with local credits disabled by default.
+
 ### The contracts
 
 `daml/main/daml/Naust.daml` holds two templates.
@@ -180,6 +188,7 @@ Where Naust goes from here is in [ROADMAP.md](ROADMAP.md), with the engineering 
 |---|---|
 | `web/` | the Next.js app, the tick, the watcher and the test scripts |
 | `web/lib/` | ledger client, token-standard calls, deposit state machine, database |
+| `examples/customer-funding/` | separate customer-account application and deposit polling adapter |
 | `daml/` | the Daml contracts (`main/`) and their tests (`test/`) |
 | `brand/` | the logo, its generator and brand guidelines |
 | `docs/` | design foundations and the engineering roadmap |
