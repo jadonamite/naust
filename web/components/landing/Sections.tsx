@@ -156,7 +156,7 @@ export function WhyItHolds() {
           No lost deposits, no recovery tickets, no one waiting on support to find their money.
         </p>
         <Link href="/operator" className="btn btn-ink">
-          Open the demo
+          Launch app
         </Link>
       </div>
       <ol className={styles.stack}>
@@ -365,7 +365,7 @@ export function Faq() {
         <h2 className={`serif ${styles.faqTitle}`}>Questions operators ask first</h2>
         <p className={styles.faqLead}>Keys, privacy, tokens, and what the sender has to do.</p>
         <Link href="/operator" className="btn btn-ink btn-sm">
-          Open the demo
+          Launch app
         </Link>
       </div>
       <div className={styles.faqList}>
@@ -393,7 +393,7 @@ export function Cta() {
         <p className={styles.ctaLead}>Send a deposit and watch it find its customer and reach your treasury, live.</p>
         <div className={styles.ctaActions}>
           <Link href="/operator" className="btn btn-accent">
-            Open the demo
+            Launch app
           </Link>
           <Link href="/customer/Ada" className="btn btn-paper">
             See a customer view

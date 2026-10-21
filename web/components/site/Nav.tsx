@@ -42,7 +42,7 @@ export function Nav({ overDark = false }: { overDark?: boolean }) {
           ))}
         </ul>
         <Link href="/operator" className={`btn btn-sm ${dark ? 'btn-light' : 'btn-accent'}`}>
-          Open the demo
+          Launch app
         </Link>
       </nav>
     </header>

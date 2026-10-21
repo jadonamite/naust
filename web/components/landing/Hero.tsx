@@ -32,7 +32,7 @@ export function Hero() {
             </p>
             <div className={styles.actions}>
               <Link href="/operator" className="btn btn-lg btn-light">
-                Open the demo
+                Launch app
               </Link>
               <a href="#how" className="btn btn-lg btn-outline-light">
                 How it works
