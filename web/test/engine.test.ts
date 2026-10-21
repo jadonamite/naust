@@ -97,3 +97,34 @@ test('screens get a reason without URLs', () => {
   assert.equal(errorReason('instruction expired or was withdrawn before it was accepted'), 'Instruction expired or was withdrawn before it was accepted.')
   assert.equal(errorReason(null), null)
 })
+
+test('a deposit that arrives mid-tick starts at once instead of waiting for earlier ones', async () => {
+  const { drain } = await import('../lib/tick.ts')
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+  const t0 = Date.now()
+  const arrivals = [{ instruction_cid: 'anita', at: 0 }, { instruction_cid: 'yusuf', at: 30 }]
+  const done = new Set<string>(), startedAt: Record<string, number> = {}
+  await drain({
+    scan: async () => 0,
+    pending: async () => arrivals.filter((a) => Date.now() - t0 >= a.at && !done.has(a.instruction_cid)),
+    advance: async (d) => { startedAt[d.instruction_cid] = Date.now() - t0; await sleep(120); done.add(d.instruction_cid) },
+    budgetMs: 1_000,
+    intervalMs: 10,
+  })
+  assert.deepEqual([...done].sort(), ['anita', 'yusuf'])
+  assert.ok(startedAt.yusuf < 100, `yusuf started at ${startedAt.yusuf} ms, before anita finished`)
+})
+
+test('each deposit is advanced once per tick, and scanning stops at the budget', async () => {
+  const { drain } = await import('../lib/tick.ts')
+  let calls = 0, scans = 0
+  await drain({
+    scan: async () => (scans++, 0),
+    pending: async () => [{ instruction_cid: 'stuck' }],
+    advance: async () => { calls++; await new Promise((r) => setTimeout(r, 60)) },
+    budgetMs: 40,
+    intervalMs: 5,
+  })
+  assert.equal(calls, 1)
+  assert.ok(scans >= 2)
+})
