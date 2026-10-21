@@ -30,6 +30,8 @@ const deposit = (id: string, ref: string, amount: string, sender: string, seenAt
   customerRef: ref,
   amount,
   instrument: 'Amulet',
+  instrumentId: 'Amulet',
+  instrumentAdmin: null,
   sender,
   senderLabel: senderName(sender),
   state: 'swept',

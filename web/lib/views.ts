@@ -4,6 +4,7 @@ import { listDeposits } from './deposits.ts'
 import { AMULET, activeContracts, amuletBalance, treasuryParty, type CreatedEvent } from './ledger.ts'
 import { partyName, senderName } from './party.ts'
 import { sumDecimals } from './decimal.ts'
+import { instrumentIdentity } from './instrument.ts'
 
 // JSON shapes the screens read. Party IDs stay whole; `label` is the readable name (see lib/party.ts).
 export const label = partyName
@@ -26,6 +27,8 @@ export type DepositView = {
   customerRef: string
   amount: string
   instrument: string
+  instrumentId: string
+  instrumentAdmin: string | null
   sender: string
   senderLabel: string
   state: Deposit['state']
@@ -83,7 +86,8 @@ export async function depositViews(businessId: string, customerId?: string): Pro
     customerId: d.customer_id,
     customerRef: refs.get(d.customer_id) ?? '',
     amount: d.amount,
-    instrument: d.instrument.slice(0, d.instrument.indexOf('@')),
+    instrument: instrumentIdentity(d.instrument).instrumentId,
+    ...instrumentIdentity(d.instrument),
     sender: d.sender,
     senderLabel: senderName(d.sender),
     state: d.state,
